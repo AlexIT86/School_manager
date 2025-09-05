@@ -35,9 +35,13 @@ class HomeworkAdmin(admin.ModelAdmin):
 
 @admin.register(HomeworkFile)
 class HomeworkFileAdmin(admin.ModelAdmin):
-    list_display = ['nume', 'homework', 'tip', 'marime_formatata', 'uploaded_at']
+    list_display = ['nume', 'homework', 'tip', 'get_marime_formatata', 'uploaded_at']
     list_filter = ['tip', 'uploaded_at']
     search_fields = ['nume', 'homework__titlu', 'descriere']
+
+    def get_marime_formatata(self, obj):
+        return obj.marime_formatata
+    get_marime_formatata.short_description = 'Mărime'
 
 
 @admin.register(HomeworkSession)

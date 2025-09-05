@@ -6,7 +6,7 @@ from .models import Grade, Semester, SubjectGradeStats, GradeGoal
 @admin.register(Grade)
 class GradeAdmin(admin.ModelAdmin):
     list_display = ['user', 'subject', 'tip', 'valoare', 'data', 'semestru']
-    list_filter = ['tip', 'semestru', 'data', 'importantes']
+    list_filter = ['tip', 'semestru', 'data', 'importante']
     search_fields = ['user__username', 'subject__nume', 'descriere']
     readonly_fields = ['created_at', 'updated_at']
 

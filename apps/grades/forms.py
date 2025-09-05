@@ -1,5 +1,5 @@
 from django import forms
-from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.validators import MinValueValidator, MaxValueValidator, FileExtensionValidator
 from datetime import date
 from .models import Grade, Semester, GradeGoal
 from apps.subjects.models import Subject
@@ -475,7 +475,7 @@ class GradeImportForm(forms.Form):
     """Form pentru importul notelor din fișier"""
 
     file = forms.FileField(
-        validators=[forms.FileExtensionValidator(allowed_extensions=['csv', 'xlsx', 'xls'])],
+        validators=[FileExtensionValidator(allowed_extensions=['csv', 'xlsx', 'xls'])],
         widget=forms.FileInput(attrs={
             'class': 'form-control',
             'accept': '.csv,.xlsx,.xls'
