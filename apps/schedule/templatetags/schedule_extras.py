@@ -19,15 +19,37 @@ def add_minutes(value, minutes):
     if value is None:
         return value
 
-    # Acceptă atât datetime.time cât și string 'HH:MM'
-    if isinstance(value, str):
+    # Acceptă: time, int (ora), string 'HH:MM' sau string numeric
+    base_time = None
+
+    # int -> interpretăm ca oră întreagă
+    if isinstance(value, int):
         try:
-            hours, mins = map(int, value.split(':')[:2])
-            base_time = time_cls(hours, mins)
+            base_time = time_cls(value % 24, 0)
         except Exception:
             return value
+
+    # string numeric
+    elif isinstance(value, str) and value.isdigit():
+        try:
+            hour_int = int(value)
+            base_time = time_cls(hour_int % 24, 0)
+        except Exception:
+            return value
+
+    # string format HH:MM
+    elif isinstance(value, str):
+        try:
+            hours, mins = map(int, value.split(':')[:2])
+            base_time = time_cls(hours % 24, mins % 60)
+        except Exception:
+            return value
+
+    # datetime.time direct
+    elif hasattr(value, 'hour') and hasattr(value, 'minute'):
+        base_time = time_cls(value.hour, value.minute)
     else:
-        base_time = value
+        return value
 
     dummy_date = datetime(2000, 1, 1, base_time.hour, base_time.minute, 0)
     new_dt = dummy_date + timedelta(minutes=minutes)
