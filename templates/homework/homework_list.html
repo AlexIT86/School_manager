@@ -1,0 +1,571 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Teme - School Manager{% endblock %}
+
+{% block extra_css %}
+<style>
+.homework-card {
+    transition: all 0.3s ease;
+    border: none;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border-left: 5px solid var(--priority-color, #007bff);
+}
+
+.homework-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.homework-card.overdue {
+    --priority-color: #dc3545;
+    background: linear-gradient(135deg, rgba(220, 53, 69, 0.05) 0%, rgba(220, 53, 69, 0.02) 100%);
+}
+
+.homework-card.due-today {
+    --priority-color: #ffc107;
+    background: linear-gradient(135deg, rgba(255, 193, 7, 0.05) 0%, rgba(255, 193, 7, 0.02) 100%);
+}
+
+.homework-card.completed {
+    --priority-color: #28a745;
+    opacity: 0.8;
+}
+
+.priority-badge {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.priority-urgenta { background: #dc3545; color: white; }
+.priority-ridicata { background: #fd7e14; color: white; }
+.priority-normala { background: #6c757d; color: white; }
+.priority-scazuta { background: #28a745; color: white; }
+
+.homework-progress {
+    height: 8px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 10px 0;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #11998e 0%, #38ef7d 100%);
+    transition: width 0.6s ease;
+    border-radius: 10px;
+}
+
+.filter-sidebar {
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    position: sticky;
+    top: 100px;
+}
+
+.filter-section {
+    margin-bottom: 25px;
+}
+
+.filter-section:last-child {
+    margin-bottom: 0;
+}
+
+.filter-title {
+    font-weight: 700;
+    color: #2c3e50;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+}
+
+.subject-filter-chip {
+    display: inline-block;
+    padding: 6px 12px;
+    margin: 3px;
+    background: #f8f9fa;
+    border: 2px solid #e9ecef;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    user-select: none;
+}
+
+.subject-filter-chip:hover {
+    border-color: #4facfe;
+    transform: translateY(-2px);
+}
+
+.subject-filter-chip.active {
+    background: var(--subject-color, #4facfe);
+    border-color: var(--subject-color, #4facfe);
+    color: white;
+}
+
+.homework-meta {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    margin-bottom: 15px;
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+.homework-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 15px;
+}
+
+.stats-overview {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+    border-radius: 20px;
+    padding: 25px;
+    margin-bottom: 25px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 800;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    opacity: 0.9;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6c757d;
+}
+
+.empty-state i {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+
+@media (max-width: 992px) {
+    .filter-sidebar {
+        position: relative;
+        top: 0;
+        margin-bottom: 20px;
+    }
+    
+    .homework-card {
+        margin-bottom: 15px;
+    }
+    
+    .homework-meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Stats Overview -->
+    <div class="stats-overview">
+        <h2 class="h3 mb-1">
+            <i class="fas fa-tasks me-2"></i>
+            Temele mele
+        </h2>
+        <p class="mb-0 opacity-75">Urmărește-ți progresul și nu rata nicio deadline</p>
+        
+        <div class="stats-grid">
+            <div class="stat-item">
+                <span class="stat-value">{{ stats.total }}</span>
+                <span class="stat-label">Total teme</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value">{{ stats.active }}</span>
+                <span class="stat-label">Active</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value">{{ stats.due_today }}</span>
+                <span class="stat-label">Azi</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value">{{ stats.overdue }}</span>
+                <span class="stat-label">Întârziate</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value">{{ stats.completed_today }}</span>
+                <span class="stat-label">Finalizate azi</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Filters Sidebar -->
+        <div class="col-lg-3">
+            <div class="filter-sidebar">
+                <form method="get" id="filterForm">
+                    <div class="filter-section">
+                        <div class="filter-title">
+                            <i class="fas fa-search me-2"></i>Căutare
+                        </div>
+                        {{ filter_form.search }}
+                    </div>
+                    
+                    <div class="filter-section">
+                        <div class="filter-title">
+                            <i class="fas fa-filter me-2"></i>Status
+                        </div>
+                        {{ filter_form.status }}
+                    </div>
+                    
+                    <div class="filter-section">
+                        <div class="filter-title">
+                            <i class="fas fa-book me-2"></i>Materia
+                        </div>
+                        {{ filter_form.subject }}
+                    </div>
+                    
+                    <div class="filter-section">
+                        <div class="filter-title">
+                            <i class="fas fa-exclamation-triangle me-2"></i>Prioritate
+                        </div>
+                        {{ filter_form.priority }}
+                    </div>
+                    
+                    <div class="filter-section">
+                        <div class="filter-title">
+                            <i class="fas fa-calendar me-2"></i>Deadline
+                        </div>
+                        {{ filter_form.deadline_range }}
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-filter me-2"></i>Filtrează
+                        </button>
+                        <a href="{% url 'homework:list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>Resetează
+                        </a>
+                    </div>
+                </form>
+                
+                <!-- Quick Actions -->
+                <div class="mt-4 pt-4 border-top">
+                    <div class="filter-title">
+                        <i class="fas fa-bolt me-2"></i>Acțiuni rapide
+                    </div>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'homework:create' %}" class="btn btn-success btn-sm">
+                            <i class="fas fa-plus me-2"></i>Temă nouă
+                        </a>
+                        <a href="{% url 'homework:calendar' %}" class="btn btn-info btn-sm">
+                            <i class="fas fa-calendar me-2"></i>Vezi calendar
+                        </a>
+                        <a href="{% url 'homework:stats' %}" class="btn btn-warning btn-sm">
+                            <i class="fas fa-chart-bar me-2"></i>Statistici
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Homework List -->
+        <div class="col-lg-9">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h4 class="mb-1">
+                        {% if filter_form.is_bound %}
+                            Rezultate filtrare
+                        {% else %}
+                            Toate temele
+                        {% endif %}
+                    </h4>
+                    <small class="text-muted">
+                        {% if page_obj %}
+                            {{ page_obj.paginator.count }} teme găsite
+                        {% endif %}
+                    </small>
+                </div>
+                
+                <div class="d-flex gap-2">
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary dropdown-toggle btn-sm" type="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-sort me-2"></i>
+                            Sortare: 
+                            {% if current_sort == 'deadline' %}Deadline
+                            {% elif current_sort == 'priority' %}Prioritate
+                            {% elif current_sort == 'subject' %}Materie
+                            {% elif current_sort == 'progress' %}Progres
+                            {% else %}Deadline{% endif %}
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="?sort=deadline">Deadline</a></li>
+                            <li><a class="dropdown-item" href="?sort=priority">Prioritate</a></li>
+                            <li><a class="dropdown-item" href="?sort=subject">Materie</a></li>
+                            <li><a class="dropdown-item" href="?sort=progress">Progres</a></li>
+                        </ul>
+                    </div>
+                    
+                    <a href="{% url 'homework:create' %}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus me-2"></i>Adaugă temă
+                    </a>
+                </div>
+            </div>
+
+            {% if page_obj %}
+                <div class="homework-grid">
+                    {% for homework in page_obj %}
+                    <div class="card homework-card mb-4 
+                         {% if homework.este_intarziata %}overdue
+                         {% elif homework.zile_ramase == 0 %}due-today
+                         {% elif homework.finalizata %}completed{% endif %}"
+                         data-homework-id="{{ homework.id }}">
+                        
+                        <span class="priority-badge priority-{{ homework.prioritate }}">
+                            {{ homework.get_prioritate_display }}
+                        </span>
+                        
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                    <h5 class="card-title mb-2">
+                                        <a href="{% url 'homework:detail' homework.id %}" 
+                                           class="text-decoration-none text-dark">
+                                            {{ homework.titlu }}
+                                        </a>
+                                    </h5>
+                                    <span class="badge" style="background-color: {{ homework.subject.culoare }}20; color: {{ homework.subject.culoare }};">
+                                        {{ homework.subject.nume }}
+                                    </span>
+                                </div>
+                                
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" 
+                                           {% if homework.finalizata %}checked{% endif %}
+                                           onchange="toggleHomework({{ homework.id }})"
+                                           id="hw-{{ homework.id }}">
+                                    <label class="form-check-label" for="hw-{{ homework.id }}">
+                                        {% if homework.finalizata %}Finalizată{% else %}Marchează ca finalizată{% endif %}
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <p class="card-text text-muted">
+                                {{ homework.descriere|truncatechars:120 }}
+                            </p>
+                            
+                            <div class="homework-meta">
+                                <span>
+                                    <i class="fas fa-calendar-alt me-1"></i>
+                                    <strong style="color: {{ homework.culoare_urgenta }};">
+                                        {{ homework.status_display }}
+                                    </strong> 
+                                    ({{ homework.deadline|date:"d.m.Y" }})
+                                </span>
+                                
+                                {% if homework.pagini %}
+                                <span>
+                                    <i class="fas fa-book-open me-1"></i>
+                                    {{ homework.pagini }}
+                                </span>
+                                {% endif %}
+                                
+                                {% if homework.timp_estimat %}
+                                <span>
+                                    <i class="fas fa-clock me-1"></i>
+                                    {{ homework.timp_estimat }} min
+                                </span>
+                                {% endif %}
+                                
+                                <span class="badge bg-light text-dark">
+                                    <i class="fas fa-star me-1"></i>
+                                    {{ homework.get_dificultate_display }}
+                                </span>
+                            </div>
+                            
+                            {% if homework.progres > 0 %}
+                            <div class="homework-progress">
+                                <div class="progress-fill" style="width: {{ homework.progres }}%"></div>
+                            </div>
+                            <small class="text-muted">Progres: {{ homework.progres }}%</small>
+                            {% endif %}
+                            
+                            <div class="homework-actions">
+                                <a href="{% url 'homework:detail' homework.id %}" 
+                                   class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-eye me-1"></i>Vezi
+                                </a>
+                                
+                                <a href="{% url 'homework:edit' homework.id %}" 
+                                   class="btn btn-outline-secondary btn-sm">
+                                    <i class="fas fa-edit me-1"></i>Editează
+                                </a>
+                                
+                                {% if not homework.finalizata %}
+                                <button class="btn btn-outline-success btn-sm" 
+                                        onclick="startSession({{ homework.id }})">
+                                    <i class="fas fa-play me-1"></i>Începe lucrul
+                                </button>
+                                {% endif %}
+                                
+                                <div class="dropdown">
+                                    <button class="btn btn-outline-secondary btn-sm dropdown-toggle" 
+                                            type="button" data-bs-toggle="dropdown">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'homework:file_upload' homework.id %}">
+                                                <i class="fas fa-upload me-2"></i>Încarcă fișier
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="#">
+                                                <i class="fas fa-copy me-2"></i>Duplică tema
+                                            </a>
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <a class="dropdown-item text-danger" 
+                                               href="{% url 'homework:delete' homework.id %}">
+                                                <i class="fas fa-trash me-2"></i>Șterge
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Pagination -->
+                {% if page_obj.has_other_pages %}
+                <nav aria-label="Homework pagination">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                        
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+                
+            {% else %}
+                <!-- Empty State -->
+                <div class="empty-state">
+                    <i class="fas fa-tasks"></i>
+                    <h4 class="mb-3">Nu ai încă nicio temă</h4>
+                    <p class="mb-4">Începe prin a adăuga prima temă pentru a-ți organiza studiul.</p>
+                    <a href="{% url 'homework:create' %}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-plus me-2"></i>Adaugă prima temă
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleHomework(homeworkId) {
+    fetch(`/teme/${homeworkId}/toggle-complete/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function startSession(homeworkId) {
+    fetch(`/teme/${homeworkId}/session/start/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            SchoolManager.showAlert('Sesiunea de lucru a fost începută!', 'success');
+            window.location.href = `/teme/${homeworkId}/`;
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+// Auto-submit filter form on change
+document.addEventListener('DOMContentLoaded', function() {
+    const filterForm = document.getElementById('filterForm');
+    const formElements = filterForm.querySelectorAll('select, input');
+    
+    formElements.forEach(element => {
+        element.addEventListener('change', function() {
+            filterForm.submit();
+        });
+    });
+});
+</script>
+{% endblock %}

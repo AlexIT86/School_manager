@@ -1,0 +1,413 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - School Manager{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'css/dashboard.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Welcome Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="welcome-header">
+                <h1 class="h3 mb-2">
+                    <i class="fas fa-sun text-warning me-2"></i>
+                    Bună, {{ user.get_full_name|default:user.username }}!
+                </h1>
+                <p class="text-muted mb-0">
+                    Astăzi este {{ today|date:"l, d F Y" }}
+                    {% if weekday_name %} • {{ weekday_name }}{% endif %}
+                    {% if profile.clasa %} • Clasa {{ profile.clasa }}{% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card bg-gradient-primary text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="stat-icon me-3">
+                            <i class="fas fa-tasks fa-2x"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title mb-1">{{ stats.total_homework }}</h5>
+                            <p class="card-text small opacity-75 mb-0">Teme active</p>
+                        </div>
+                    </div>
+                    {% if stats.overdue_homework > 0 %}
+                    <div class="mt-2">
+                        <small class="badge bg-warning">
+                            <i class="fas fa-exclamation-triangle me-1"></i>
+                            {{ stats.overdue_homework }} întârziate
+                        </small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card stat-card bg-gradient-success text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="stat-icon me-3">
+                            <i class="fas fa-chart-line fa-2x"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title mb-1">{{ stats.avg_grade_this_month|floatformat:2 }}</h5>
+                            <p class="card-text small opacity-75 mb-0">Media lunii</p>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <small class="badge bg-light text-dark">
+                            {{ stats.total_grades_this_month }} note noi
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card stat-card bg-gradient-info text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="stat-icon me-3">
+                            <i class="fas fa-star fa-2x"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title mb-1">{{ stats.general_average|floatformat:2 }}</h5>
+                            <p class="card-text small opacity-75 mb-0">Media generală</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card stat-card bg-gradient-warning text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="stat-icon me-3">
+                            <i class="fas fa-calendar-day fa-2x"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title mb-1">{{ today_schedule|length }}</h5>
+                            <p class="card-text small opacity-75 mb-0">Ore astăzi</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Left Column -->
+        <div class="col-lg-8">
+            <!-- Today's Schedule -->
+            {% if today_schedule %}
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-calendar-day me-2 text-primary"></i>
+                        Orarul de astăzi - {{ weekday_name }}
+                    </h6>
+                    <a href="{% url 'schedule:calendar' %}" class="btn btn-sm btn-outline-primary">
+                        Vezi orar complet
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="schedule-today">
+                        {% for entry in today_schedule %}
+                        <div class="schedule-entry d-flex align-items-center p-3 border-bottom">
+                            <div class="time-slot me-3">
+                                <div class="fw-bold">{{ entry.ora_inceput|time:"H:i" }}</div>
+                                <small class="text-muted">{{ entry.ora_sfarsit|time:"H:i" }}</small>
+                            </div>
+                            <div class="subject-info flex-grow-1" style="border-left: 4px solid {{ entry.subject.culoare }};">
+                                <div class="ps-3">
+                                    <h6 class="mb-1">{{ entry.subject.nume }}</h6>
+                                    {% if entry.sala %}
+                                    <small class="text-muted">
+                                        <i class="fas fa-map-marker-alt me-1"></i>{{ entry.sala }}
+                                    </small>
+                                    {% endif %}
+                                    {% if entry.nume_profesor %}
+                                    <small class="text-muted">
+                                        • {{ entry.subject.nume_profesor }}
+                                    </small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="hour-number">
+                                <span class="badge bg-light text-dark">Ora {{ entry.numar_ora }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Urgent Homework -->
+            {% if urgent_homework %}
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-exclamation-triangle me-2 text-warning"></i>
+                        Teme urgente
+                    </h6>
+                    <a href="{% url 'homework:list' %}" class="btn btn-sm btn-outline-warning">
+                        Vezi toate
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    {% for homework in urgent_homework %}
+                    <div class="homework-item d-flex align-items-center p-3 border-bottom">
+                        <div class="priority-indicator me-3">
+                            {% if homework.este_intarziata %}
+                                <i class="fas fa-exclamation-circle text-danger fa-lg"></i>
+                            {% elif homework.zile_ramase == 0 %}
+                                <i class="fas fa-clock text-warning fa-lg"></i>
+                            {% else %}
+                                <i class="fas fa-calendar-alt text-info fa-lg"></i>
+                            {% endif %}
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">
+                                        <a href="{% url 'homework:detail' homework.id %}" 
+                                           class="text-decoration-none">
+                                            {{ homework.titlu }}
+                                        </a>
+                                    </h6>
+                                    <small class="text-muted">
+                                        <span class="badge" style="background-color: {{ homework.subject.culoare }}20; color: {{ homework.subject.culoare }};">
+                                            {{ homework.subject.nume }}
+                                        </span>
+                                    </small>
+                                </div>
+                                <div class="text-end">
+                                    <div class="fw-bold small" style="color: {{ homework.culoare_urgenta }};">
+                                        {{ homework.status_display }}
+                                    </div>
+                                    <div class="text-muted small">{{ homework.deadline|date:"d.m.Y" }}</div>
+                                </div>
+                            </div>
+                            {% if homework.progres > 0 %}
+                            <div class="progress mt-2" style="height: 6px;">
+                                <div class="progress-bar bg-success" style="width: {{ homework.progres }}%"></div>
+                            </div>
+                            <small class="text-muted">Progres: {{ homework.progres }}%</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Recent Grades -->
+            {% if recent_grades %}
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-star me-2 text-success"></i>
+                        Note recente
+                    </h6>
+                    <a href="{% url 'grades:list' %}" class="btn btn-sm btn-outline-success">
+                        Vezi toate
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    {% for grade in recent_grades %}
+                    <div class="grade-item d-flex align-items-center p-3 border-bottom">
+                        <div class="grade-value me-3">
+                            <span class="badge badge-grade" style="background-color: {{ grade.culoare_afisare }};">
+                                {{ grade.valoare }}
+                            </span>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1">{{ grade.subject.nume }}</h6>
+                            <small class="text-muted">
+                                {{ grade.get_tip_evaluare_display|default:"Evaluare" }}
+                                {% if grade.descriere %} • {{ grade.descriere }}{% endif %}
+                            </small>
+                        </div>
+                        <div class="text-end">
+                            <div class="small text-muted">{{ grade.data|date:"d.m.Y" }}</div>
+                            {% if grade.importante %}
+                            <small class="badge bg-warning">Important</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Right Column -->
+        <div class="col-lg-4">
+            <!-- Quick Actions -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-bolt me-2 text-primary"></i>
+                        Acțiuni rapide
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'homework:create' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-plus me-2"></i>Adaugă temă
+                        </a>
+                        <a href="{% url 'grades:create' %}" class="btn btn-outline-success">
+                            <i class="fas fa-star-half-alt me-2"></i>Adaugă notă
+                        </a>
+                        <a href="{% url 'schedule:calendar' %}" class="btn btn-outline-info">
+                            <i class="fas fa-calendar me-2"></i>Vezi orarul
+                        </a>
+                        <a href="{% url 'subjects:create' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-book me-2"></i>Materie nouă
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Today's Homework -->
+            {% if today_homework %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-clock me-2 text-warning"></i>
+                        Teme pentru astăzi
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% for homework in today_homework %}
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="form-check me-3">
+                            <input class="form-check-input" type="checkbox" 
+                                   {% if homework.finalizata %}checked{% endif %}
+                                   onchange="toggleHomework({{ homework.id }})">
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1 small">{{ homework.titlu }}</h6>
+                            <small class="text-muted">{{ homework.subject.nume }}</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Recent Absences -->
+            {% if recent_absences %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-calendar-times me-2 text-danger"></i>
+                        Absențe recente
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% for absence in recent_absences %}
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="me-3">
+                            {% if absence.motivata %}
+                                <i class="fas fa-check-circle text-success"></i>
+                            {% else %}
+                                <i class="fas fa-times-circle text-danger"></i>
+                            {% endif %}
+                        </div>
+                        <div class="flex-grow-1">
+                            <small class="fw-bold">{{ absence.subject.nume }}</small>
+                            <div class="text-muted small">
+                                {{ absence.data|date:"d.m.Y" }}
+                                {% if absence.motivata %}
+                                    <span class="badge bg-success">Motivată</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Nemotivată</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Notifications -->
+            {% if unread_notifications %}
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-bell me-2 text-info"></i>
+                        Notificări
+                    </h6>
+                    <a href="{% url 'core:notifications' %}" class="btn btn-sm btn-outline-info">
+                        Vezi toate
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% for notification in unread_notifications %}
+                    <div class="notification-item mb-3 pb-2 border-bottom">
+                        <div class="d-flex align-items-start">
+                            <div class="me-2">
+                                {% if notification.tip == 'tema' %}
+                                    <i class="fas fa-tasks text-info"></i>
+                                {% elif notification.tip == 'nota' %}
+                                    <i class="fas fa-star text-warning"></i>
+                                {% else %}
+                                    <i class="fas fa-info-circle text-primary"></i>
+                                {% endif %}
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1 small">{{ notification.titlu }}</h6>
+                                <p class="mb-1 small text-muted">{{ notification.mesaj|truncatechars:80 }}</p>
+                                <small class="text-muted">{{ notification.created_at|timesince }} în urmă</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleHomework(homeworkId) {
+    fetch(`/teme/${homeworkId}/toggle-complete/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Optionally refresh the page or update UI
+            location.reload();
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+// Auto-refresh dashboard every 5 minutes
+setTimeout(() => {
+    location.reload();
+}, 300000);
+</script>
+{% endblock %}

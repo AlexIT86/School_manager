@@ -1,0 +1,471 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Înregistrare - School Manager{% endblock %}
+
+{% block extra_css %}
+<style>
+.register-main {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    min-height: 100vh;
+    padding: 40px 20px;
+}
+
+.register-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    overflow: hidden;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.register-header {
+    background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 40px;
+    text-align: center;
+}
+
+.register-body {
+    padding: 40px;
+}
+
+.form-floating {
+    margin-bottom: 20px;
+}
+
+.form-floating .form-control {
+    border-radius: 12px;
+    border: 2px solid #e9ecef;
+    padding: 18px 15px;
+    font-size: 16px;
+}
+
+.form-floating .form-control:focus {
+    border-color: #4facfe;
+    box-shadow: 0 0 0 0.2rem rgba(79, 172, 254, 0.25);
+}
+
+.btn-register {
+    background: linear-gradient(45deg, #4facfe 0%, #00f2fe 100%);
+    border: none;
+    border-radius: 12px;
+    padding: 15px 30px;
+    font-weight: 600;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    width: 100%;
+}
+
+.btn-register:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(79, 172, 254, 0.3);
+}
+
+.step-indicator {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 30px;
+}
+
+.step {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 10px;
+    font-weight: bold;
+    color: #6c757d;
+    position: relative;
+}
+
+.step.active {
+    background: linear-gradient(45deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+}
+
+.step.completed {
+    background: #28a745;
+    color: white;
+}
+
+.step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 100%;
+    width: 20px;
+    height: 2px;
+    background: #e9ecef;
+    transform: translateY(-50%);
+}
+
+.step.completed:not(:last-child)::after {
+    background: #28a745;
+}
+
+.password-requirements {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 10px;
+}
+
+.requirement {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+    font-size: 14px;
+}
+
+.requirement i {
+    margin-right: 8px;
+    width: 16px;
+}
+
+.requirement.valid {
+    color: #28a745;
+}
+
+.requirement.invalid {
+    color: #dc3545;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="register-main">
+    <div class="register-card">
+        <!-- Header -->
+        <div class="register-header">
+            <h2 class="fw-bold mb-3">
+                <i class="fas fa-user-plus me-2"></i>
+                Creează-ți contul
+            </h2>
+            <p class="mb-0 opacity-75">
+                Alătură-te și începe să îți organizezi perfect viața școlară!
+            </p>
+        </div>
+        
+        <!-- Body -->
+        <div class="register-body">
+            <!-- Step Indicator -->
+            <div class="step-indicator">
+                <div class="step active">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="step">
+                    <i class="fas fa-check"></i>
+                </div>
+            </div>
+            
+            <form method="post" class="register-form" id="registerForm">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger" role="alert">
+                        {% for error in form.non_field_errors %}
+                            <i class="fas fa-exclamation-triangle me-2"></i>{{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                
+                <div class="row">
+                    <!-- Nume și Prenume -->
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            <input type="text" class="form-control" id="id_first_name" name="first_name" 
+                                   placeholder="Prenume" required
+                                   value="{{ form.first_name.value|default:'' }}">
+                            <label for="id_first_name">
+                                <i class="fas fa-user me-2"></i>Prenume
+                            </label>
+                            {% if form.first_name.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.first_name.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            <input type="text" class="form-control" id="id_last_name" name="last_name" 
+                                   placeholder="Nume de familie" required
+                                   value="{{ form.last_name.value|default:'' }}">
+                            <label for="id_last_name">
+                                <i class="fas fa-user me-2"></i>Nume de familie
+                            </label>
+                            {% if form.last_name.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.last_name.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Username și Email -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            <input type="text" class="form-control" id="id_username" name="username" 
+                                   placeholder="Nume utilizator" required
+                                   value="{{ form.username.value|default:'' }}">
+                            <label for="id_username">
+                                <i class="fas fa-at me-2"></i>Nume utilizator
+                            </label>
+                            <div class="form-text">
+                                150 de caractere sau mai puține. Doar litere, cifre și @/./+/-/_
+                            </div>
+                            {% if form.username.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.username.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            <input type="email" class="form-control" id="id_email" name="email" 
+                                   placeholder="Email" required
+                                   value="{{ form.email.value|default:'' }}">
+                            <label for="id_email">
+                                <i class="fas fa-envelope me-2"></i>Adresa de email
+                            </label>
+                            {% if form.email.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.email.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Parole -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            <input type="password" class="form-control" id="id_password1" name="password1" 
+                                   placeholder="Parola" required>
+                            <label for="id_password1">
+                                <i class="fas fa-lock me-2"></i>Parola
+                            </label>
+                            {% if form.password1.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.password1.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Password Requirements -->
+                        <div class="password-requirements" id="passwordRequirements" style="display: none;">
+                            <h6 class="small fw-bold mb-2">Cerințe parolă:</h6>
+                            <div class="requirement" id="req-length">
+                                <i class="fas fa-times"></i>
+                                Cel puțin 8 caractere
+                            </div>
+                            <div class="requirement" id="req-common">
+                                <i class="fas fa-times"></i>
+                                Nu poate fi o parolă comună
+                            </div>
+                            <div class="requirement" id="req-numeric">
+                                <i class="fas fa-times"></i>
+                                Nu poate fi doar numerică
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            <input type="password" class="form-control" id="id_password2" name="password2" 
+                                   placeholder="Confirmă parola" required>
+                            <label for="id_password2">
+                                <i class="fas fa-lock me-2"></i>Confirmă parola
+                            </label>
+                            {% if form.password2.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.password2.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div id="passwordMatch" class="mt-2" style="display: none;">
+                            <small class="text-danger">
+                                <i class="fas fa-times me-1"></i>
+                                Parolele nu se potrivesc
+                            </small>
+                        </div>
+                        
+                        <div id="passwordMatchSuccess" class="mt-2" style="display: none;">
+                            <small class="text-success">
+                                <i class="fas fa-check me-1"></i>
+                                Parolele se potrivesc
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Terms and Conditions -->
+                <div class="form-check mb-4">
+                    <input class="form-check-input" type="checkbox" id="acceptTerms" required>
+                    <label class="form-check-label" for="acceptTerms">
+                        Sunt de acord cu 
+                        <a href="#" class="text-decoration-none">Termenii și condițiile</a>
+                        și 
+                        <a href="#" class="text-decoration-none">Politica de confidențialitate</a>
+                    </label>
+                </div>
+                
+                <button type="submit" class="btn btn-register text-white" id="submitBtn" disabled>
+                    <i class="fas fa-user-plus me-2"></i>Creează contul
+                </button>
+            </form>
+            
+            <div class="text-center mt-4">
+                <p class="text-muted">
+                    Ai deja cont? 
+                    <a href="{% url 'core:login' %}" class="text-decoration-none fw-semibold">
+                        Conectează-te aici
+                    </a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const password1 = document.getElementById('id_password1');
+    const password2 = document.getElementById('id_password2');
+    const requirements = document.getElementById('passwordRequirements');
+    const submitBtn = document.getElementById('submitBtn');
+    const acceptTerms = document.getElementById('acceptTerms');
+    
+    // Show password requirements when focusing on password field
+    password1.addEventListener('focus', function() {
+        requirements.style.display = 'block';
+    });
+    
+    // Validate password requirements
+    password1.addEventListener('input', function() {
+        const value = this.value;
+        
+        // Length requirement
+        const lengthReq = document.getElementById('req-length');
+        if (value.length >= 8) {
+            lengthReq.classList.add('valid');
+            lengthReq.classList.remove('invalid');
+            lengthReq.querySelector('i').className = 'fas fa-check';
+        } else {
+            lengthReq.classList.add('invalid');
+            lengthReq.classList.remove('valid');
+            lengthReq.querySelector('i').className = 'fas fa-times';
+        }
+        
+        // Common password check (simplified)
+        const commonReq = document.getElementById('req-common');
+        const commonPasswords = ['password', '123456', 'password123', 'admin'];
+        if (!commonPasswords.includes(value.toLowerCase())) {
+            commonReq.classList.add('valid');
+            commonReq.classList.remove('invalid');
+            commonReq.querySelector('i').className = 'fas fa-check';
+        } else {
+            commonReq.classList.add('invalid');
+            commonReq.classList.remove('valid');
+            commonReq.querySelector('i').className = 'fas fa-times';
+        }
+        
+        // Numeric only check
+        const numericReq = document.getElementById('req-numeric');
+        if (!/^\d+$/.test(value)) {
+            numericReq.classList.add('valid');
+            numericReq.classList.remove('invalid');
+            numericReq.querySelector('i').className = 'fas fa-check';
+        } else {
+            numericReq.classList.add('invalid');
+            numericReq.classList.remove('valid');
+            numericReq.querySelector('i').className = 'fas fa-times';
+        }
+        
+        checkPasswordMatch();
+        validateForm();
+    });
+    
+    // Check password match
+    password2.addEventListener('input', checkPasswordMatch);
+    
+    function checkPasswordMatch() {
+        const match = document.getElementById('passwordMatch');
+        const success = document.getElementById('passwordMatchSuccess');
+        
+        if (password2.value) {
+            if (password1.value === password2.value) {
+                match.style.display = 'none';
+                success.style.display = 'block';
+            } else {
+                match.style.display = 'block';
+                success.style.display = 'none';
+            }
+        } else {
+            match.style.display = 'none';
+            success.style.display = 'none';
+        }
+        
+        validateForm();
+    }
+    
+    // Validate form
+    acceptTerms.addEventListener('change', validateForm);
+    
+    function validateForm() {
+        const password1Valid = password1.value.length >= 8;
+        const passwordsMatch = password1.value === password2.value && password2.value;
+        const termsAccepted = acceptTerms.checked;
+        const allFieldsFilled = document.getElementById('id_first_name').value &&
+                               document.getElementById('id_last_name').value &&
+                               document.getElementById('id_username').value &&
+                               document.getElementById('id_email').value;
+        
+        submitBtn.disabled = !(password1Valid && passwordsMatch && termsAccepted && allFieldsFilled);
+    }
+    
+    // Add loading state to submit button
+    document.getElementById('registerForm').addEventListener('submit', function() {
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Se creează contul...';
+        submitBtn.disabled = true;
+    });
+    
+    // Update step indicator on successful validation
+    function updateStepIndicator() {
+        const step1 = document.querySelector('.step:first-child');
+        const step2 = document.querySelector('.step:last-child');
+        
+        if (!submitBtn.disabled) {
+            step1.classList.add('completed');
+            step1.classList.remove('active');
+            step2.classList.add('active');
+        } else {
+            step1.classList.add('active');
+            step1.classList.remove('completed');
+            step2.classList.remove('active');
+        }
+    }
+    
+    // Listen for form validation changes
+    document.querySelectorAll('input').forEach(input => {
+        input.addEventListener('input', updateStepIndicator);
+        input.addEventListener('change', updateStepIndicator);
+    });
+});
+</script>
+{% endblock %}

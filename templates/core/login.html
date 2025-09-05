@@ -1,0 +1,255 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Autentificare - School Manager{% endblock %}
+
+{% block extra_css %}
+<style>
+.login-main {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.login-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    overflow: hidden;
+    max-width: 1000px;
+    width: 100%;
+}
+
+.login-left {
+    background: linear-gradient(45deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+    padding: 60px 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+}
+
+.login-right {
+    padding: 60px 40px;
+}
+
+.login-icon {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    opacity: 0.9;
+}
+
+.form-floating {
+    margin-bottom: 20px;
+}
+
+.form-floating .form-control {
+    border-radius: 15px;
+    border: 2px solid #e9ecef;
+    padding: 20px 15px;
+    font-size: 16px;
+}
+
+.form-floating .form-control:focus {
+    border-color: #4facfe;
+    box-shadow: 0 0 0 0.2rem rgba(79, 172, 254, 0.25);
+}
+
+.btn-login {
+    background: linear-gradient(45deg, #4facfe 0%, #00f2fe 100%);
+    border: none;
+    border-radius: 15px;
+    padding: 15px 30px;
+    font-weight: 600;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    width: 100%;
+}
+
+.btn-login:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(79, 172, 254, 0.3);
+}
+
+.feature-item {
+    margin-bottom: 25px;
+    text-align: left;
+}
+
+.feature-item i {
+    font-size: 2rem;
+    margin-bottom: 10px;
+    opacity: 0.8;
+}
+
+@media (max-width: 768px) {
+    .login-left {
+        padding: 40px 30px;
+    }
+    .login-right {
+        padding: 40px 30px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid login-main">
+    <div class="login-card">
+        <div class="row g-0">
+            <!-- Left Side - Welcome -->
+            <div class="col-lg-6 login-left">
+                <div>
+                    <div class="login-icon">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <h2 class="fw-bold mb-4">Bine ai venit la School Manager!</h2>
+                    <p class="lead mb-5">
+                        Aplicația care te ajută să îți organizezi perfect viața școlară
+                    </p>
+                    
+                    <div class="features">
+                        <div class="feature-item">
+                            <i class="fas fa-calendar-alt d-block"></i>
+                            <h5>Orar personalizat</h5>
+                            <p class="small opacity-75">Gestionează orarul și modificările cu ușurință</p>
+                        </div>
+                        
+                        <div class="feature-item">
+                            <i class="fas fa-tasks d-block"></i>
+                            <h5>Tracking teme</h5>
+                            <p class="small opacity-75">Nu mai uita nicio temă cu reminder-uri inteligente</p>
+                        </div>
+                        
+                        <div class="feature-item">
+                            <i class="fas fa-chart-line d-block"></i>
+                            <h5>Progres note</h5>
+                            <p class="small opacity-75">Monitorizează-ți progresul și stabilește obiective</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Side - Login Form -->
+            <div class="col-lg-6 login-right">
+                <div class="text-center mb-5">
+                    <h3 class="fw-bold text-dark">Conectează-te</h3>
+                    <p class="text-muted">Introdu datele tale pentru a accesa contul</p>
+                </div>
+                
+                <form method="post" class="login-form">
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger" role="alert">
+                            {% for error in form.non_field_errors %}
+                                <i class="fas fa-exclamation-triangle me-2"></i>{{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    
+                    <div class="form-floating">
+                        <input type="text" class="form-control" id="id_username" name="username" 
+                               placeholder="Nume utilizator" required
+                               value="{{ form.username.value|default:'' }}">
+                        <label for="id_username">
+                            <i class="fas fa-user me-2"></i>Nume utilizator
+                        </label>
+                        {% if form.username.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.username.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-floating">
+                        <input type="password" class="form-control" id="id_password" name="password" 
+                               placeholder="Parola" required>
+                        <label for="id_password">
+                            <i class="fas fa-lock me-2"></i>Parola
+                        </label>
+                        {% if form.password.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.password.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="remember_me" name="remember_me">
+                            <label class="form-check-label text-muted small" for="remember_me">
+                                Ține-mă minte
+                            </label>
+                        </div>
+                        <a href="{% url 'core:password_reset' %}" class="text-decoration-none small">
+                            Ai uitat parola?
+                        </a>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-login text-white">
+                        <i class="fas fa-sign-in-alt me-2"></i>Conectează-te
+                    </button>
+                    
+                    <input type="hidden" name="next" value="{{ next }}">
+                </form>
+                
+                <div class="text-center mt-4">
+                    <p class="text-muted">
+                        Nu ai cont? 
+                        <a href="{% url 'core:register' %}" class="text-decoration-none fw-semibold">
+                            Înregistrează-te aici
+                        </a>
+                    </p>
+                </div>
+                
+                <!-- Demo Account Info -->
+                <div class="mt-4 p-3 bg-light rounded-3">
+                    <h6 class="small fw-bold text-muted mb-2">
+                        <i class="fas fa-info-circle me-1"></i>Cont demo
+                    </h6>
+                    <p class="small text-muted mb-2">
+                        Poți testa aplicația cu datele:
+                    </p>
+                    <div class="small">
+                        <strong>Username:</strong> demo<br>
+                        <strong>Parola:</strong> demo123
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-focus pe primul input
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('id_username').focus();
+});
+
+// Enhanced form validation
+document.querySelector('.login-form').addEventListener('submit', function(e) {
+    const username = document.getElementById('id_username').value.trim();
+    const password = document.getElementById('id_password').value;
+    
+    if (!username || !password) {
+        e.preventDefault();
+        alert('Te rog completează toate câmpurile!');
+    }
+});
+
+// Add loading state to button
+document.querySelector('.btn-login').addEventListener('click', function() {
+    this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Se conectează...';
+    this.disabled = true;
+});
+</script>
+{% endblock %}

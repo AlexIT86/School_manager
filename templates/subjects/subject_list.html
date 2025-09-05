@@ -1,0 +1,508 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Materii - School Manager{% endblock %}
+
+{% block extra_css %}
+<style>
+.subject-card {
+    transition: all 0.3s ease;
+    border: none;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.subject-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.subject-header {
+    background: linear-gradient(135deg, var(--subject-color, #007bff) 0%, color-mix(in srgb, var(--subject-color, #007bff) 80%, black) 100%);
+    color: white;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+}
+
+.subject-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 100px;
+    height: 100px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-10px) rotate(180deg); }
+}
+
+.subject-stats {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 15px;
+}
+
+.stat-item {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.stat-value {
+    display: block;
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    opacity: 0.8;
+}
+
+.subject-body {
+    padding: 20px;
+}
+
+.subject-actions {
+    padding: 15px 20px;
+    background: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+}
+
+.grade-badge {
+    font-size: 1.1rem;
+    font-weight: bold;
+    padding: 8px 12px;
+    border-radius: 25px;
+    min-width: 60px;
+    text-align: center;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6c757d;
+}
+
+.empty-state i {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+
+.filter-sidebar {
+    background: #f8f9fa;
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.search-box {
+    position: relative;
+}
+
+.search-box i {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+    z-index: 10;
+}
+
+.search-box input {
+    padding-left: 45px;
+    border-radius: 25px;
+    border: 2px solid #e9ecef;
+}
+
+.search-box input:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2 class="h3 mb-1">
+                <i class="fas fa-book me-2 text-primary"></i>
+                Materiile mele
+            </h2>
+            <p class="text-muted mb-0">Gestionează materiile și urmărește progresul la fiecare</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="{% url 'subjects:create' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Adaugă materie
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Filters Sidebar -->
+        <div class="col-lg-3">
+            <div class="filter-sidebar">
+                <h6 class="fw-bold mb-3">
+                    <i class="fas fa-filter me-2"></i>Filtrare
+                </h6>
+                
+                <!-- Search -->
+                <div class="search-box mb-3">
+                    <i class="fas fa-search"></i>
+                    <input type="text" class="form-control" placeholder="Caută materie..." id="searchInput">
+                </div>
+                
+                <!-- Quick Filters -->
+                <div class="mb-3">
+                    <h6 class="small fw-bold text-muted mb-2">STARE</h6>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="statusFilter" id="all" value="all" checked>
+                        <label class="form-check-label" for="all">Toate materiile</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="statusFilter" id="active" value="active">
+                        <label class="form-check-label" for="active">Doar active</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="statusFilter" id="inactive" value="inactive">
+                        <label class="form-check-label" for="inactive">Inactive</label>
+                    </div>
+                </div>
+                
+                <!-- Sort Options -->
+                <div class="mb-3">
+                    <h6 class="small fw-bold text-muted mb-2">SORTARE</h6>
+                    <select class="form-select form-select-sm" id="sortSelect">
+                        <option value="name">Nume A-Z</option>
+                        <option value="name-desc">Nume Z-A</option>
+                        <option value="teacher">Profesor</option>
+                        <option value="average">Media notelor</option>
+                        <option value="homework">Teme active</option>
+                    </select>
+                </div>
+                
+                <!-- Quick Stats -->
+                <div class="mt-4 p-3 bg-white rounded">
+                    <h6 class="small fw-bold text-muted mb-2">STATISTICI RAPIDE</h6>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="small">Total materii:</span>
+                        <span class="badge bg-primary">{{ subjects_with_stats|length }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="small">Active:</span>
+                        <span class="badge bg-success">
+                            {% for item in subjects_with_stats %}{% if item.subject.activa %}{{ forloop.counter0|add:1 }}{% endif %}{% empty %}0{% endfor %}
+                        </span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="small">Cu teme active:</span>
+                        <span class="badge bg-warning">
+                            {% for item in subjects_with_stats %}{% if item.stats.total_homework > 0 %}{{ forloop.counter0|add:1 }}{% endif %}{% empty %}0{% endfor %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Subjects Grid -->
+        <div class="col-lg-9">
+            {% if subjects_with_stats %}
+            <div class="row g-4" id="subjectsGrid">
+                {% for item in subjects_with_stats %}
+                <div class="col-md-6 col-lg-4 subject-item" 
+                     data-name="{{ item.subject.nume|lower }}" 
+                     data-teacher="{{ item.subject.nume_profesor|lower }}"
+                     data-active="{{ item.subject.activa|yesno:'true,false' }}"
+                     data-homework="{{ item.stats.total_homework }}"
+                     data-average="{{ item.stats.avg_grade|default:0 }}">
+                    <div class="card subject-card h-100" style="--subject-color: {{ item.subject.culoare }};">
+                        <!-- Subject Header -->
+                        <div class="subject-header" style="background: linear-gradient(135deg, {{ item.subject.culoare }} 0%, {{ item.subject.culoare }}cc 100%);">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h5 class="card-title mb-0 fw-bold">{{ item.subject.nume }}</h5>
+                                {% if not item.subject.activa %}
+                                <span class="badge bg-light text-dark small">Inactivă</span>
+                                {% endif %}
+                            </div>
+                            
+                            {% if item.subject.nume_profesor %}
+                            <p class="mb-2 opacity-75">
+                                <i class="fas fa-chalkboard-teacher me-1"></i>
+                                {{ item.subject.nume_profesor }}
+                            </p>
+                            {% endif %}
+                            
+                            {% if item.subject.sala %}
+                            <p class="mb-0 small opacity-75">
+                                <i class="fas fa-map-marker-alt me-1"></i>
+                                Sala {{ item.subject.sala }}
+                            </p>
+                            {% endif %}
+                            
+                            <!-- Subject Stats -->
+                            <div class="subject-stats">
+                                <div class="stat-item">
+                                    <span class="stat-value">{{ item.stats.total_homework }}</span>
+                                    <span class="stat-label">Teme</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-value">{{ item.stats.total_files }}</span>
+                                    <span class="stat-label">Fișiere</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-value">
+                                        {% if item.stats.avg_grade %}
+                                            {{ item.stats.avg_grade|floatformat:1 }}
+                                        {% else %}
+                                            --
+                                        {% endif %}
+                                    </span>
+                                    <span class="stat-label">Media</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Subject Body -->
+                        <div class="subject-body flex-grow-1">
+                            {% if item.subject.descriere %}
+                            <p class="text-muted small mb-3">{{ item.subject.descriere|truncatechars:100 }}</p>
+                            {% endif %}
+                            
+                            <!-- Quick Info -->
+                            <div class="row g-2 mb-3">
+                                {% if item.stats.avg_grade %}
+                                <div class="col-6">
+                                    <div class="d-flex align-items-center">
+                                        <span class="grade-badge me-2" style="background-color: {{ item.subject.culoare }}20; color: {{ item.subject.culoare }};">
+                                            {{ item.stats.avg_grade|floatformat:1 }}
+                                        </span>
+                                        <small class="text-muted">Media</small>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                {% if item.stats.total_absences > 0 %}
+                                <div class="col-6">
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge bg-danger me-2">{{ item.stats.total_absences }}</span>
+                                        <small class="text-muted">Absențe</small>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Progress Indicators -->
+                            {% if item.stats.total_homework > 0 %}
+                            <div class="mb-2">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <small class="text-muted">Teme active</small>
+                                    <small class="text-muted">{{ item.stats.total_homework }}</small>
+                                </div>
+                                {% if item.stats.total_homework > 5 %}
+                                <div class="progress" style="height: 4px;">
+                                    <div class="progress-bar bg-warning" style="width: 100%"></div>
+                                </div>
+                                <small class="text-warning">Multe teme!</small>
+                                {% elif item.stats.total_homework > 2 %}
+                                <div class="progress" style="height: 4px;">
+                                    <div class="progress-bar bg-info" style="width: 60%"></div>
+                                </div>
+                                <small class="text-info">Moderate</small>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Subject Actions -->
+                        <div class="subject-actions">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'subjects:detail' item.subject.id %}" 
+                                       class="btn btn-outline-primary" title="Vezi detalii">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'subjects:edit' item.subject.id %}" 
+                                       class="btn btn-outline-secondary" title="Editează">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'grades:subject_grades' item.subject.id %}" 
+                                       class="btn btn-outline-success" title="Note">
+                                        <i class="fas fa-chart-line"></i>
+                                    </a>
+                                </div>
+                                
+                                <div class="dropdown">
+                                    <button class="btn btn-link btn-sm text-muted" type="button" 
+                                            data-bs-toggle="dropdown">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'homework:create' %}?subject={{ item.subject.id }}">
+                                                <i class="fas fa-plus me-2 text-info"></i>Adaugă temă
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'grades:create' %}?subject={{ item.subject.id }}">
+                                                <i class="fas fa-star me-2 text-warning"></i>Adaugă notă
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'subjects:file_upload' item.subject.id %}">
+                                                <i class="fas fa-upload me-2 text-success"></i>Încarcă fișier
+                                            </a>
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <a class="dropdown-item text-danger" href="{% url 'subjects:delete' item.subject.id %}">
+                                                <i class="fas fa-trash me-2"></i>Șterge
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <!-- Empty State -->
+            <div class="empty-state">
+                <i class="fas fa-book-open"></i>
+                <h4 class="mb-3">Nu ai încă nicio materie</h4>
+                <p class="mb-4">Începe prin a adăuga prima materie pentru a-ți organiza studiul.</p>
+                <a href="{% url 'subjects:create' %}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-plus me-2"></i>Adaugă prima materie
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    const sortSelect = document.getElementById('sortSelect');
+    const statusFilters = document.querySelectorAll('input[name="statusFilter"]');
+    const subjectsGrid = document.getElementById('subjectsGrid');
+    const subjectItems = document.querySelectorAll('.subject-item');
+    
+    // Search functionality
+    searchInput.addEventListener('input', function() {
+        filterAndSort();
+    });
+    
+    // Sort functionality
+    sortSelect.addEventListener('change', function() {
+        filterAndSort();
+    });
+    
+    // Status filter functionality
+    statusFilters.forEach(filter => {
+        filter.addEventListener('change', function() {
+            filterAndSort();
+        });
+    });
+    
+    function filterAndSort() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const sortValue = sortSelect.value;
+        const statusFilter = document.querySelector('input[name="statusFilter"]:checked').value;
+        
+        // Convert NodeList to Array for filtering and sorting
+        let items = Array.from(subjectItems);
+        
+        // Filter items
+        items = items.filter(item => {
+            const name = item.dataset.name;
+            const teacher = item.dataset.teacher || '';
+            const isActive = item.dataset.active === 'true';
+            
+            // Search filter
+            const matchesSearch = name.includes(searchTerm) || teacher.includes(searchTerm);
+            
+            // Status filter
+            let matchesStatus = true;
+            if (statusFilter === 'active') {
+                matchesStatus = isActive;
+            } else if (statusFilter === 'inactive') {
+                matchesStatus = !isActive;
+            }
+            
+            return matchesSearch && matchesStatus;
+        });
+        
+        // Sort items
+        items.sort((a, b) => {
+            switch (sortValue) {
+                case 'name':
+                    return a.dataset.name.localeCompare(b.dataset.name);
+                case 'name-desc':
+                    return b.dataset.name.localeCompare(a.dataset.name);
+                case 'teacher':
+                    return (a.dataset.teacher || '').localeCompare(b.dataset.teacher || '');
+                case 'average':
+                    return parseFloat(b.dataset.average) - parseFloat(a.dataset.average);
+                case 'homework':
+                    return parseInt(b.dataset.homework) - parseInt(a.dataset.homework);
+                default:
+                    return 0;
+            }
+        });
+        
+        // Hide all items first
+        subjectItems.forEach(item => {
+            item.style.display = 'none';
+        });
+        
+        // Show filtered and sorted items
+        items.forEach((item, index) => {
+            item.style.display = 'block';
+            item.style.order = index;
+        });
+        
+        // Show empty state if no items
+        const emptyState = document.querySelector('.empty-state');
+        if (items.length === 0 && subjectItems.length > 0) {
+            if (!emptyState) {
+                const emptyDiv = document.createElement('div');
+                emptyDiv.className = 'col-12 text-center py-5';
+                emptyDiv.innerHTML = `
+                    <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">Nu s-au găsit materii</h5>
+                    <p class="text-muted">Încearcă să modifici criteriile de căutare.</p>
+                `;
+                subjectsGrid.appendChild(emptyDiv);
+            }
+        } else if (emptyState && items.length > 0) {
+            emptyState.remove();
+        }
+    }
+    
+    // Add hover effect for better UX
+    subjectItems.forEach(item => {
+        const card = item.querySelector('.subject-card');
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-8px)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+});
+</script>
+{% endblock %}

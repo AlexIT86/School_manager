@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}Adaugă modificare orar{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Adaugă modificare orar</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ form.non_field_errors }}
+
+                        <div class="row g-3">
+                            <div class="col-md-12">{{ form.schedule_entry.label_tag }} {{ form.schedule_entry }}</div>
+                            <div class="col-md-6">{{ form.tip_schimbare.label_tag }} {{ form.tip_schimbare }}</div>
+                            <div class="col-md-3">{{ form.data_start.label_tag }} {{ form.data_start }}</div>
+                            <div class="col-md-3">{{ form.data_end.label_tag }} {{ form.data_end }}</div>
+                            <div class="col-md-12">{{ form.motiv.label_tag }} {{ form.motiv }}</div>
+                            <div class="col-md-6">{{ form.ora_inceput_noua.label_tag }} {{ form.ora_inceput_noua }}</div>
+                            <div class="col-md-6">{{ form.ora_sfarsit_noua.label_tag }} {{ form.ora_sfarsit_noua }}</div>
+                            <div class="col-md-6">{{ form.sala_noua.label_tag }} {{ form.sala_noua }}</div>
+                            <div class="col-md-6">{{ form.subject_nou.label_tag }} {{ form.subject_nou }}</div>
+                            <div class="col-md-12">{{ form.profesor_inlocuitor.label_tag }} {{ form.profesor_inlocuitor }}</div>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'schedule:changes' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-1"></i>Înapoi
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>Salvează
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+

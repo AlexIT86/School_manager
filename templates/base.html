@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}School Manager{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="{% load static %}{% static 'css/main.css' %}" rel="stylesheet">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation -->
+    {% if user.is_authenticated %}
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold" href="{% url 'core:dashboard' %}">
+                <i class="fas fa-graduation-cap me-2"></i>School Manager
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.app_name == 'core' %}active{% endif %}" 
+                           href="{% url 'core:dashboard' %}">
+                            <i class="fas fa-home me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.app_name == 'subjects' %}active{% endif %}" 
+                           href="{% url 'subjects:list' %}">
+                            <i class="fas fa-book me-1"></i>Materii
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.app_name == 'schedule' %}active{% endif %}" 
+                           href="{% url 'schedule:calendar' %}">
+                            <i class="fas fa-calendar me-1"></i>Orar
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.app_name == 'homework' %}active{% endif %}" 
+                           href="{% url 'homework:list' %}">
+                            <i class="fas fa-tasks me-1"></i>Teme
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.app_name == 'grades' %}active{% endif %}" 
+                           href="{% url 'grades:overview' %}">
+                            <i class="fas fa-chart-line me-1"></i>Note
+                        </a>
+                    </li>
+                </ul>
+                
+                <!-- Notifications -->
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle position-relative" href="#" id="notificationsDropdown" 
+                           role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-bell"></i>
+                            {% if unread_notifications_count > 0 %}
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                {{ unread_notifications_count }}
+                            </span>
+                            {% endif %}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" style="min-width: 300px;">
+                            <li><h6 class="dropdown-header">Notificări</h6></li>
+                            {% for notification in recent_notifications|slice:":5" %}
+                            <li>
+                                <a class="dropdown-item small {% if not notification.citita %}fw-bold{% endif %}" 
+                                   href="{% url 'core:mark_notification_read' notification.id %}">
+                                    <div class="d-flex align-items-start">
+                                        <div class="me-2">
+                                            {% if notification.tip == 'tema' %}
+                                                <i class="fas fa-tasks text-info"></i>
+                                            {% elif notification.tip == 'nota' %}
+                                                <i class="fas fa-star text-warning"></i>
+                                            {% else %}
+                                                <i class="fas fa-info-circle text-primary"></i>
+                                            {% endif %}
+                                        </div>
+                                        <div>
+                                            <div class="fw-semibold">{{ notification.titlu }}</div>
+                                            <div class="text-muted small">{{ notification.mesaj|truncatechars:50 }}</div>
+                                            <div class="text-muted small">{{ notification.created_at|timesince }} în urmă</div>
+                                        </div>
+                                    </div>
+                                </a>
+                            </li>
+                            {% empty %}
+                            <li><span class="dropdown-item-text text-muted">Nicio notificare</span></li>
+                            {% endfor %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-center small" href="{% url 'core:notifications' %}">Vezi toate</a></li>
+                        </ul>
+                    </li>
+                    
+                    <!-- User Menu -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle me-1"></i>
+                            {{ user.get_full_name|default:user.username }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <span class="dropdown-item-text small text-muted">
+                                    {% if user.student_profile.clasa %}
+                                        Clasa {{ user.student_profile.clasa }}
+                                    {% endif %}
+                                </span>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'core:profile' %}">
+                                <i class="fas fa-user me-2"></i>Profil
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'core:notifications' %}">
+                                <i class="fas fa-bell me-2"></i>Notificări
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'core:logout' %}">
+                                <i class="fas fa-sign-out-alt me-2"></i>Ieșire
+                            </a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    {% endif %}
+
+    <!-- Main Content -->
+    <main class="{% if user.is_authenticated %}main-content{% else %}login-main{% endif %}">
+        <!-- Messages -->
+        {% if messages %}
+        <div class="container-fluid mt-3">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {% if message.tags == 'error' %}
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                {% elif message.tags == 'success' %}
+                    <i class="fas fa-check-circle me-2"></i>
+                {% elif message.tags == 'warning' %}
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                {% else %}
+                    <i class="fas fa-info-circle me-2"></i>
+                {% endif %}
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Page Content -->
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    {% if user.is_authenticated %}
+    <footer class="bg-light border-top mt-5 py-3">
+        <div class="container-fluid">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <small class="text-muted">
+                        © 2024 School Manager - Aplicație pentru elevi
+                    </small>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <small class="text-muted">
+                        Ultima actualizare: {{ request.user.last_login|date:"d.m.Y H:i" }}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </footer>
+    {% endif %}
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script src="{% load static %}{% static 'js/main.js' %}"></script>
+    
+    {% block extra_js %}{% endblock %}
+
+    <!-- Quick Actions (doar pentru utilizatori autentificați) -->
+    {% if user.is_authenticated %}
+    <div class="quick-actions">
+        <div class="dropdown">
+            <button class="btn btn-primary btn-lg rounded-circle shadow" type="button" 
+                    data-bs-toggle="dropdown" title="Acțiuni rapide">
+                <i class="fas fa-plus"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end mb-2">
+                <li><h6 class="dropdown-header">Adaugă rapid</h6></li>
+                <li><a class="dropdown-item" href="{% url 'homework:create' %}">
+                    <i class="fas fa-tasks me-2 text-info"></i>Temă nouă
+                </a></li>
+                <li><a class="dropdown-item" href="{% url 'grades:create' %}">
+                    <i class="fas fa-star me-2 text-warning"></i>Notă/Absență
+                </a></li>
+                <li><a class="dropdown-item" href="{% url 'subjects:create' %}">
+                    <i class="fas fa-book me-2 text-success"></i>Materie nouă
+                </a></li>
+                <li><a class="dropdown-item" href="{% url 'schedule:entry_create' %}">
+                    <i class="fas fa-calendar-plus me-2 text-primary"></i>Oră în orar
+                </a></li>
+            </ul>
+        </div>
+    </div>
+    {% endif %}
+</body>
+</html>

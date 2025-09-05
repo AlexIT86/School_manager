@@ -1,0 +1,766 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Note și Absențe - School Manager{% endblock %}
+
+{% block extra_css %}
+<style>
+.grades-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 20px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.grades-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+    animation: float 8s ease-in-out infinite;
+}
+
+.semester-info {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 1rem;
+    margin-top: 1rem;
+    backdrop-filter: blur(10px);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 15px;
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--stat-color, #4facfe);
+}
+
+.stat-value {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #2c3e50;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    color: #6c757d;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 0.85rem;
+}
+
+.subjects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.subject-card {
+    background: white;
+    border-radius: 15px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    border-left: 5px solid var(--subject-color, #007bff);
+}
+
+.subject-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.subject-header {
+    display: flex;
+    justify-content: between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.subject-name {
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 0;
+}
+
+.grade-circle {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 1.2rem;
+    color: white;
+    margin-left: auto;
+}
+
+.subject-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.subject-stat {
+    text-align: center;
+    padding: 0.75rem;
+    background: #f8f9fa;
+    border-radius: 10px;
+}
+
+.subject-stat-value {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #2c3e50;
+}
+
+.subject-stat-label {
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
+}
+
+.trend-indicator {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 8px;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.trend-crescatoare {
+    background: #d4edda;
+    color: #155724;
+}
+
+.trend-descrescatoare {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.trend-stabila {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.recent-grades {
+    background: white;
+    border-radius: 15px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+}
+
+.grade-item {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid #f8f9fa;
+    transition: all 0.3s ease;
+    border-radius: 10px;
+    margin-bottom: 0.5rem;
+}
+
+.grade-item:hover {
+    background: rgba(79, 172, 254, 0.05);
+    transform: translateX(5px);
+}
+
+.grade-item:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.grade-badge {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    color: white;
+    margin-right: 1rem;
+    font-size: 1.1rem;
+}
+
+.grade-info {
+    flex-grow: 1;
+}
+
+.grade-subject {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 0.25rem;
+}
+
+.grade-details {
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+.grade-date {
+    text-align: right;
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.goals-section {
+    background: white;
+    border-radius: 15px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.goal-item {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    border: 2px solid #f8f9fa;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+}
+
+.goal-item:hover {
+    border-color: #4facfe;
+    box-shadow: 0 4px 15px rgba(79, 172, 254, 0.1);
+}
+
+.goal-item.achieved {
+    border-color: #28a745;
+    background: linear-gradient(135deg, rgba(40, 167, 69, 0.05) 0%, rgba(40, 167, 69, 0.02) 100%);
+}
+
+.goal-progress {
+    flex-grow: 1;
+    margin-left: 1rem;
+}
+
+.goal-name {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.progress-bar-custom {
+    height: 8px;
+    background: #e9ecef;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.progress-fill-custom {
+    height: 100%;
+    background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+    border-radius: 10px;
+    transition: width 0.6s ease;
+}
+
+.goal-numbers {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #6c757d;
+}
+
+.empty-state i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+@media (max-width: 768px) {
+    .subjects-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .subject-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .grade-item {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+    }
+    
+    .grade-date {
+        text-align: center;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="grades-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h2 class="h3 mb-2">
+                    <i class="fas fa-chart-line me-2"></i>
+                    Note și Absențe
+                </h2>
+                <p class="mb-0 opacity-75">
+                    Urmărește-ți progresul academic și atinge-ți obiectivele
+                </p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <div class="btn-group">
+                    <a href="{% url 'grades:create' %}" class="btn btn-light">
+                        <i class="fas fa-plus me-2"></i>Adaugă notă
+                    </a>
+                    <a href="{% url 'grades:stats' %}" class="btn btn-outline-light">
+                        <i class="fas fa-chart-bar me-2"></i>Statistici
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        {% if active_semester %}
+        <div class="semester-info">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h6 class="mb-1">
+                        <i class="fas fa-calendar-alt me-2"></i>
+                        {{ active_semester }}
+                    </h6>
+                    <small class="opacity-75">
+                        {{ active_semester.data_inceput|date:"d.m.Y" }} - {{ active_semester.data_sfarsit|date:"d.m.Y" }}
+                    </small>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <a href="{% url 'grades:semesters' %}" class="btn btn-sm btn-outline-light">
+                        <i class="fas fa-cog me-1"></i>Gestionează semestre
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    <!-- Quick Stats -->
+    <div class="stats-grid">
+        <div class="stat-card" style="--stat-color: #28a745;">
+            <span class="stat-value">{{ general_stats.total_grades }}</span>
+            <span class="stat-label">Note totale</span>
+        </div>
+        <div class="stat-card" style="--stat-color: #4facfe;">
+            <span class="stat-value">{{ general_stats.avg_grade|floatformat:2 }}</span>
+            <span class="stat-label">Media generală</span>
+        </div>
+        <div class="stat-card" style="--stat-color: #ffc107;">
+            <span class="stat-value">{{ general_stats.grades_this_month }}</span>
+            <span class="stat-label">Note luna aceasta</span>
+        </div>
+        <div class="stat-card" style="--stat-color: #dc3545;">
+            <span class="stat-value">{{ general_stats.total_absences }}</span>
+            <span class="stat-label">Absențe totale</span>
+        </div>
+        <div class="stat-card" style="--stat-color: #6c757d;">
+            <span class="stat-value">{{ general_stats.motivated_absences }}</span>
+            <span class="stat-label">Absențe motivate</span>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Subjects Performance -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-book me-2 text-primary"></i>
+                        Performanța pe materii
+                    </h6>
+                </div>
+                <div class="card-body p-0">
+                    {% if subject_stats %}
+                    <div class="subjects-grid p-3">
+                        {% for stats in subject_stats %}
+                        <div class="subject-card" style="--subject-color: {{ stats.subject.culoare }};">
+                            <div class="subject-header">
+                                <h6 class="subject-name">{{ stats.subject.nume }}</h6>
+                                {% if stats.media %}
+                                <div class="grade-circle" style="background-color: {{ stats.culoare_media }};">
+                                    {{ stats.media|floatformat:1 }}
+                                </div>
+                                {% else %}
+                                <div class="grade-circle" style="background-color: #6c757d;">
+                                    --
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <small class="text-muted">{{ stats.subject.nume_profesor|default:"Profesor nespecificat" }}</small>
+                                {% if stats.tendinta != 'neconcludenta' %}
+                                <span class="trend-indicator trend-{{ stats.tendinta }}">
+                                    {% if stats.tendinta == 'crescatoare' %}
+                                        <i class="fas fa-arrow-up me-1"></i>Progres
+                                    {% elif stats.tendinta == 'descrescatoare' %}
+                                        <i class="fas fa-arrow-down me-1"></i>Scădere
+                                    {% else %}
+                                        <i class="fas fa-minus me-1"></i>Stabilă
+                                    {% endif %}
+                                </span>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="subject-stats">
+                                <div class="subject-stat">
+                                    <div class="subject-stat-value">{{ stats.numar_note }}</div>
+                                    <div class="subject-stat-label">Note</div>
+                                </div>
+                                <div class="subject-stat">
+                                    <div class="subject-stat-value">{{ stats.total_absente }}</div>
+                                    <div class="subject-stat-label">Absențe</div>
+                                </div>
+                                <div class="subject-stat">
+                                    <div class="subject-stat-value">
+                                        {% if stats.nota_maxima %}{{ stats.nota_maxima|floatformat:1 }}{% else %}--{% endif %}
+                                    </div>
+                                    <div class="subject-stat-label">Max</div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-3">
+                                <div class="d-flex gap-2">
+                                    <a href="{% url 'grades:subject_grades' stats.subject.id %}" 
+                                       class="btn btn-sm btn-outline-primary flex-fill">
+                                        <i class="fas fa-eye me-1"></i>Vezi note
+                                    </a>
+                                    <a href="{% url 'grades:create' %}?subject={{ stats.subject.id }}" 
+                                       class="btn btn-sm btn-primary">
+                                        <i class="fas fa-plus"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-chart-line"></i>
+                        <h5>Nu există date pentru acest semestru</h5>
+                        <p>Adaugă prima notă pentru a vedea statistici.</p>
+                        <a href="{% url 'grades:create' %}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Adaugă prima notă
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Recent Grades -->
+            {% if recent_grades %}
+            <div class="recent-grades">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0">
+                        <i class="fas fa-star me-2 text-warning"></i>
+                        Note recente
+                    </h6>
+                    <a href="{% url 'grades:list' %}" class="btn btn-sm btn-outline-primary">
+                        Vezi toate
+                    </a>
+                </div>
+                
+                {% for grade in recent_grades %}
+                <div class="grade-item">
+                    <div class="grade-badge" style="background-color: {{ grade.culoare_afisare }};">
+                        {{ grade.valoare }}
+                    </div>
+                    <div class="grade-info">
+                        <div class="grade-subject">{{ grade.subject.nume }}</div>
+                        <div class="grade-details">
+                            {{ grade.get_tip_evaluare_display|default:"Evaluare" }}
+                            {% if grade.descriere %} • {{ grade.descriere }}{% endif %}
+                            {% if grade.importante %}
+                            <span class="badge bg-warning ms-2">Important</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="grade-date">
+                        <div>{{ grade.data|date:"d.m.Y" }}</div>
+                        <small class="text-muted">{{ grade.data|timesince }} în urmă</small>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Grade Goals -->
+            {% if grade_goals %}
+            <div class="goals-section mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0">
+                        <i class="fas fa-target me-2 text-success"></i>
+                        Obiectivele mele
+                    </h6>
+                    <a href="{% url 'grades:goals' %}" class="btn btn-sm btn-outline-success">
+                        Gestionează
+                    </a>
+                </div>
+                
+                {% for goal in grade_goals %}
+                <div class="goal-item {% if goal.atins %}achieved{% endif %}">
+                    <div class="text-center">
+                        {% if goal.atins %}
+                        <i class="fas fa-check-circle fa-2x text-success"></i>
+                        {% else %}
+                        <i class="fas fa-target fa-2x text-warning"></i>
+                        {% endif %}
+                    </div>
+                    <div class="goal-progress">
+                        <div class="goal-name">
+                            {{ goal.subject.nume }} - Media {{ goal.media_dorita }}
+                        </div>
+                        {% if not goal.atins %}
+                        <div class="progress-bar-custom">
+                            {% with current_avg=goal.subject.media_note|default:0 progress_percent=current_avg|div:goal.media_dorita|mul:100 %}
+                            <div class="progress-fill-custom" style="width: {{ progress_percent|floatformat:0 }}%"></div>
+                            {% endwith %}
+                        </div>
+                        <div class="goal-numbers">
+                            <span>Curent: {{ goal.subject.media_note|default:"--"|floatformat:1 }}</span>
+                            <span>Obiectiv: {{ goal.media_dorita }}</span>
+                        </div>
+                        {% if goal.diferenta_de_media > 0 %}
+                        <small class="text-muted">
+                            Îți mai trebuie {{ goal.note_necesare }} note de 10 pentru obiectiv
+                        </small>
+                        {% endif %}
+                        {% else %}
+                        <small class="text-success">
+                            <i class="fas fa-trophy me-1"></i>
+                            Obiectiv atins în {{ goal.data_atins|date:"d.m.Y" }}!
+                        </small>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <div class="text-center mt-3">
+                    <a href="{% url 'grades:goal_create' %}" class="btn btn-sm btn-success">
+                        <i class="fas fa-plus me-1"></i>Obiectiv nou
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Recent Absences -->
+            {% if recent_absences %}
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-calendar-times me-2 text-danger"></i>
+                        Absențe recente
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% for absence in recent_absences %}
+                    <div class="d-flex align-items-center mb-3 pb-2 border-bottom">
+                        <div class="me-3">
+                            {% if absence.motivata %}
+                            <i class="fas fa-check-circle text-success fa-lg"></i>
+                            {% else %}
+                            <i class="fas fa-times-circle text-danger fa-lg"></i>
+                            {% endif %}
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold">{{ absence.subject.nume }}</div>
+                            <small class="text-muted">{{ absence.data|date:"d.m.Y" }}</small>
+                        </div>
+                        <div>
+                            {% if absence.motivata %}
+                            <span class="badge bg-success">Motivată</span>
+                            {% else %}
+                            <span class="badge bg-danger">Nemotivată</span>
+                            {% if not absence.motivata %}
+                            <a href="{% url 'grades:excuse_absence' absence.id %}" 
+                               class="btn btn-sm btn-outline-warning ms-1" title="Motivează">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                    <div class="text-center">
+                        <a href="{% url 'grades:list' %}?grade_type=absenta" class="btn btn-sm btn-outline-danger">
+                            Vezi toate absențele
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Quick Actions -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-bolt me-2 text-primary"></i>
+                        Acțiuni rapide
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'grades:create' %}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Adaugă notă/absență
+                        </a>
+                        <a href="{% url 'grades:calendar' %}" class="btn btn-outline-info">
+                            <i class="fas fa-calendar me-2"></i>Calendar note
+                        </a>
+                        <a href="{% url 'grades:stats' %}" class="btn btn-outline-warning">
+                            <i class="fas fa-chart-bar me-2"></i>Statistici detaliate
+                        </a>
+                        <a href="{% url 'grades:goals' %}" class="btn btn-outline-success">
+                            <i class="fas fa-target me-2"></i>Gestionează obiective
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Animate progress bars
+    const progressBars = document.querySelectorAll('.progress-fill-custom');
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const progressBar = entry.target;
+                const width = progressBar.style.width;
+                progressBar.style.width = '0%';
+                setTimeout(() => {
+                    progressBar.style.width = width;
+                }, 100);
+            }
+        });
+    }, { threshold: 0.1 });
+
+    progressBars.forEach(bar => {
+        observer.observe(bar);
+    });
+
+    // Animate stat values
+    const statValues = document.querySelectorAll('.stat-value');
+    statValues.forEach(stat => {
+        const target = parseFloat(stat.textContent);
+        if (!isNaN(target)) {
+            animateCounter(stat, target);
+        }
+    });
+});
+
+function animateCounter(element, target) {
+    const duration = 2000;
+    const startTime = performance.now();
+    const startValue = 0;
+    
+    const updateCounter = (currentTime) => {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const value = startValue + (target - startValue) * easeOutQuart(progress);
+        
+        if (Number.isInteger(target)) {
+            element.textContent = Math.floor(value);
+        } else {
+            element.textContent = value.toFixed(2);
+        }
+        
+        if (progress < 1) {
+            requestAnimationFrame(updateCounter);
+        }
+    };
+    
+    requestAnimationFrame(updateCounter);
+}
+
+function easeOutQuart(t) {
+    return 1 - (--t) * t * t * t;
+}
+
+// Quick grade entry
+function quickAddGrade(subjectId) {
+    const grade = prompt('Introduceți nota (1-10):');
+    if (grade && !isNaN(grade) && grade >= 1 && grade <= 10) {
+        fetch('/note/quick-add/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({
+                subject_id: subjectId,
+                grade_value: parseFloat(grade),
+                grade_type: 'test',
+                description: 'Adăugată rapid'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                SchoolManager.showAlert('Nota a fost adăugată cu succes!', 'success');
+                location.reload();
+            } else {
+                SchoolManager.showAlert('Eroare la adăugarea notei!', 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            SchoolManager.showAlert('Eroare de rețea!', 'danger');
+        });
+    }
+}
+</script>
+{% endblock %}

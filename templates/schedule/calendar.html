@@ -1,0 +1,638 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Orar Școlar - School Manager{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'css/calendar.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header with Stats -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2 class="h3 mb-2">
+                <i class="fas fa-calendar-week me-2 text-primary"></i>
+                Orarul meu școlar
+            </h2>
+            <p class="text-muted mb-0">
+                Săptămâna {{ week_info.start|date:"d.m.Y" }} - {{ week_info.end|date:"d.m.Y" }}
+                {% if week_info.current_day %}
+                • Astăzi este {{ weekdays|slice:week_info.current_day|first }}
+                {% endif %}
+            </p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <div class="btn-group" role="group">
+                <a href="{% url 'schedule:entry_create' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Adaugă oră
+                </a>
+                <a href="{% url 'schedule:print' %}" class="btn btn-outline-secondary" target="_blank">
+                    <i class="fas fa-print me-2"></i>Printează
+                </a>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                        <i class="fas fa-cog me-2"></i>Opțiuni
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="{% url 'schedule:templates' %}">
+                            <i class="fas fa-layer-group me-2"></i>Template-uri
+                        </a></li>
+                        <li><a class="dropdown-item" href="{% url 'schedule:changes' %}">
+                            <i class="fas fa-exchange-alt me-2"></i>Modificări
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="#" onclick="exportSchedule()">
+                            <i class="fas fa-download me-2"></i>Exportă
+                        </a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="schedule-stats">
+        <div class="stat-box" style="--stat-color: #4facfe;">
+            <span class="stat-value">{{ stats.total_hours_per_week }}</span>
+            <span class="stat-label">Ore pe săptămână</span>
+        </div>
+        <div class="stat-box" style="--stat-color: #28a745;">
+            <span class="stat-value">{{ stats.subjects_count }}</span>
+            <span class="stat-label">Materii</span>
+        </div>
+        <div class="stat-box" style="--stat-color: #ffc107;">
+            <span class="stat-value">{{ stats.busiest_day|default:"--" }}</span>
+            <span class="stat-label">Cea mai încărcată zi</span>
+        </div>
+        <div class="stat-box" style="--stat-color: #17a2b8;">
+            <span class="stat-value" id="currentTime">--:--</span>
+            <span class="stat-label">Ora curentă</span>
+        </div>
+    </div>
+
+    <!-- Schedule Filters -->
+    <div class="schedule-filters">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="filter-group">
+                    <span class="filter-label">Filtrează pe materii:</span>
+                    <div class="subject-filter" id="subjectFilter">
+                        <div class="subject-chip active" data-subject="all">
+                            <i class="fas fa-check-circle me-1"></i>Toate
+                        </div>
+                        {% for item in schedule_data.values %}
+                            {% for entry in item.entries %}
+                                <div class="subject-chip" 
+                                     data-subject="{{ entry.subject.nume|lower }}"
+                                     style="--subject-color: {{ entry.subject.culoare }};">
+                                    {{ entry.subject.nume }}
+                                </div>
+                            {% endfor %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="filter-group">
+                    <span class="filter-label">Vizualizare:</span>
+                    <div class="btn-group" role="group">
+                        <input type="radio" class="btn-check" name="viewMode" id="weekView" checked>
+                        <label class="btn btn-outline-primary" for="weekView">
+                            <i class="fas fa-calendar-week me-1"></i>Săptămânal
+                        </label>
+                        <input type="radio" class="btn-check" name="viewMode" id="monthView">
+                        <label class="btn btn-outline-primary" for="monthView">
+                            <i class="fas fa-calendar me-1"></i>Lunar
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Weekly Schedule Calendar -->
+    <div class="schedule-calendar">
+        <div class="calendar-header">
+            <div class="calendar-title">
+                <i class="fas fa-calendar-week me-2"></i>
+                Orarul săptămânal
+            </div>
+            <div class="calendar-controls">
+                <button class="btn calendar-nav-prev" onclick="navigateWeek(-1)">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <span class="current-week">Săptămâna curentă</span>
+                <button class="btn calendar-nav-next" onclick="navigateWeek(1)">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="weekly-schedule" id="weeklySchedule">
+            <!-- Time Header -->
+            <div class="time-header">
+                <i class="fas fa-clock"></i>
+            </div>
+            
+            <!-- Day Headers -->
+            {% for day_name in weekdays %}
+            <div class="day-header {% if forloop.counter == week_info.current_day %}today{% endif %}">
+                {{ day_name }}
+            </div>
+            {% endfor %}
+            
+            <!-- Time Slots and Schedule Grid -->
+            {% for hour in hour_slots %}
+            <div class="time-slot" data-hour="{{ hour }}">
+                <div class="time-start">{{ hour|add:7|time:"H:i" }}</div>
+                <div class="time-end">{{ hour|add:7|add_minutes:50|time:"H:i" }}</div>
+            </div>
+            
+            {% for day_name, day_data in schedule_data.items %}
+            <div class="hour-cell {% if day_data.day_num == week_info.current_day and hour == current_hour %}current-hour{% endif %}"
+                 data-day="{{ day_data.day_num }}" 
+                 data-hour="{{ hour|add:7 }}"
+                 data-hour-number="{{ hour }}"
+                 onclick="addScheduleEntry({{ day_data.day_num }}, {{ hour }})">
+                
+                {% for entry in day_data.entries %}
+                    {% if entry.numar_ora == hour %}
+                    <div class="schedule-entry {{ entry.tip_ora }}"
+                         data-entry-id="{{ entry.id }}"
+                         data-subject="{{ entry.subject.nume|lower }}"
+                         style="--subject-color: {{ entry.subject.culoare }}; background-color: {{ entry.subject.culoare }};">
+                        
+                        <div class="subject-name">{{ entry.subject.nume }}</div>
+                        <div class="subject-details">
+                            <div class="time-range">{{ entry.ora_inceput|time:"H:i" }} - {{ entry.ora_sfarsit|time:"H:i" }}</div>
+                            {% if entry.sala %}
+                            <div class="room-info">Sala {{ entry.sala }}</div>
+                            {% endif %}
+                            {% if entry.subject.nume_profesor %}
+                            <div class="teacher-info">{{ entry.subject.nume_profesor }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="entry-actions">
+                            <button class="btn btn-sm btn-light btn-edit" 
+                                    onclick="editScheduleEntry({{ entry.id }})" title="Editează">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-light btn-delete" 
+                                    onclick="deleteScheduleEntry({{ entry.id }})" title="Șterge">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% endif %}
+                {% empty %}
+                {% endfor %}
+                
+                {% if not day_data.entries or hour not in day_data.entries|get_hours %}
+                <div class="empty-slot-indicator">
+                    <i class="fas fa-plus"></i>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Changes Alert -->
+    {% if week_info.changes %}
+    <div class="alert alert-warning mt-4" role="alert">
+        <h6 class="alert-heading">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            Modificări în orar această săptămână
+        </h6>
+        <div class="changes-list">
+            {% for change in week_info.changes %}
+            <div class="change-item">
+                <strong>{{ change.get_tip_schimbare_display }}:</strong>
+                {{ change.schedule_entry.subject.nume }} 
+                {% if change.data_start == change.data_end %}
+                în {{ change.data_start|date:"d.m.Y" }}
+                {% else %}
+                din {{ change.data_start|date:"d.m.Y" }} până în {{ change.data_end|date:"d.m.Y" }}
+                {% endif %}
+                {% if change.motiv %}
+                <small class="text-muted">({{ change.motiv }})</small>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        <hr>
+        <div class="mb-0">
+            <a href="{% url 'schedule:changes' %}" class="btn btn-outline-warning btn-sm">
+                Vezi toate modificările
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Upcoming Classes Today -->
+    {% if today_classes %}
+    <div class="card mt-4">
+        <div class="card-header bg-primary text-white">
+            <h6 class="card-title mb-0">
+                <i class="fas fa-clock me-2"></i>
+                Orele de astăzi
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% for class in today_classes %}
+                <div class="col-md-4 mb-3">
+                    <div class="today-class-item">
+                        <div class="class-time">
+                            <strong>{{ class.ora_inceput|time:"H:i" }} - {{ class.ora_sfarsit|time:"H:i" }}</strong>
+                        </div>
+                        <div class="class-subject" style="color: {{ class.subject.culoare }};">
+                            {{ class.subject.nume }}
+                        </div>
+                        {% if class.sala %}
+                        <div class="class-room">
+                            <i class="fas fa-map-marker-alt me-1"></i>
+                            Sala {{ class.sala }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Add Entry Modal -->
+<div class="modal fade" id="addEntryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Adaugă oră în orar</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addEntryForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Materia</label>
+                        <select class="form-control" id="entrySubject" required>
+                            <option value="">Selectează materia</option>
+                            {% for subject in user.subjects.all %}
+                            <option value="{{ subject.id }}" data-color="{{ subject.culoare }}">
+                                {{ subject.nume }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label class="form-label">Ziua</label>
+                            <select class="form-control" id="entryDay" required>
+                                <option value="1">Luni</option>
+                                <option value="2">Marți</option>
+                                <option value="3">Miercuri</option>
+                                <option value="4">Joi</option>
+                                <option value="5">Vineri</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Ora</label>
+                            <select class="form-control" id="entryHour" required>
+                                {% for hour in hour_slots %}
+                                <option value="{{ hour }}">
+                                    Ora {{ hour }} ({{ hour|add:7|time:"H:i" }}-{{ hour|add:7|add_minutes:50|time:"H:i" }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Sala (opțional)</label>
+                        <input type="text" class="form-control" id="entryRoom" placeholder="ex: A12, B5">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Tipul orei</label>
+                        <select class="form-control" id="entryType">
+                            <option value="normal">Oră normală</option>
+                            <option value="dirigentie">Ora de dirigentie</option>
+                            <option value="optionala">Oră opțională</option>
+                            <option value="recuperare">Oră de recuperare</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Note speciale (opțional)</label>
+                        <textarea class="form-control" id="entryNotes" rows="2" 
+                                  placeholder="Note sau observații speciale..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anulează</button>
+                    <button type="submit" class="btn btn-primary">Adaugă ora</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Entry Details Modal -->
+<div class="modal fade" id="entryDetailsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Detalii oră</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="entryDetailsContent">
+                <!-- Content will be loaded dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Închide</button>
+                <button type="button" class="btn btn-primary" id="editEntryBtn">Editează</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/calendar.js' %}"></script>
+<script>
+// Global variables
+let currentWeekOffset = 0;
+let selectedEntry = null;
+
+// Initialize calendar
+document.addEventListener('DOMContentLoaded', function() {
+    updateCurrentTime();
+    setInterval(updateCurrentTime, 60000); // Update every minute
+    
+    initializeSubjectFilters();
+    initializeDragAndDrop();
+    
+    // Initialize calendar if ScheduleCalendar is available
+    if (typeof ScheduleCalendar !== 'undefined') {
+        ScheduleCalendar.init();
+    }
+});
+
+// Update current time display
+function updateCurrentTime() {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('ro-RO', { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+    });
+    const timeElement = document.getElementById('currentTime');
+    if (timeElement) {
+        timeElement.textContent = timeString;
+    }
+    
+    // Update current time indicator
+    updateCurrentTimeIndicator();
+}
+
+// Subject filter functionality
+function initializeSubjectFilters() {
+    const filterChips = document.querySelectorAll('.subject-chip');
+    filterChips.forEach(chip => {
+        chip.addEventListener('click', function() {
+            if (this.dataset.subject === 'all') {
+                // Show all subjects
+                filterChips.forEach(c => c.classList.remove('active'));
+                this.classList.add('active');
+                showAllSubjects();
+            } else {
+                // Toggle individual subject
+                const allChip = document.querySelector('[data-subject="all"]');
+                allChip.classList.remove('active');
+                this.classList.toggle('active');
+                filterSubjects();
+            }
+        });
+    });
+}
+
+function showAllSubjects() {
+    const entries = document.querySelectorAll('.schedule-entry');
+    entries.forEach(entry => {
+        entry.style.display = 'flex';
+    });
+}
+
+function filterSubjects() {
+    const activeFilters = Array.from(document.querySelectorAll('.subject-chip.active'))
+        .map(chip => chip.dataset.subject)
+        .filter(subject => subject !== 'all');
+    
+    const entries = document.querySelectorAll('.schedule-entry');
+    entries.forEach(entry => {
+        const entrySubject = entry.dataset.subject;
+        const shouldShow = activeFilters.length === 0 || activeFilters.includes(entrySubject);
+        entry.style.display = shouldShow ? 'flex' : 'none';
+    });
+}
+
+// Schedule entry management
+function addScheduleEntry(day, hour) {
+    const modal = new bootstrap.Modal(document.getElementById('addEntryModal'));
+    document.getElementById('entryDay').value = day;
+    document.getElementById('entryHour').value = hour;
+    modal.show();
+}
+
+function editScheduleEntry(entryId) {
+    // Load entry data and show edit modal
+    fetch(`/orar/entry/${entryId}/edit/`)
+        .then(response => response.text())
+        .then(html => {
+            // Show edit modal with pre-filled data
+            // Implementation depends on your specific needs
+            window.location.href = `/orar/entry/${entryId}/edit/`;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            SchoolManager.showAlert('Eroare la încărcarea datelor!', 'danger');
+        });
+}
+
+function deleteScheduleEntry(entryId) {
+    if (confirm('Sigur vrei să ștergi această oră din orar?')) {
+        fetch(`/orar/entry/${entryId}/delete/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                SchoolManager.showAlert('Eroare la ștergere!', 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            SchoolManager.showAlert('Eroare de rețea!', 'danger');
+        });
+    }
+}
+
+// Add entry form submission
+document.getElementById('addEntryForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData();
+    formData.append('subject', document.getElementById('entrySubject').value);
+    formData.append('zi_saptamana', document.getElementById('entryDay').value);
+    formData.append('numar_ora', document.getElementById('entryHour').value);
+    formData.append('sala', document.getElementById('entryRoom').value);
+    formData.append('tip_ora', document.getElementById('entryType').value);
+    formData.append('note', document.getElementById('entryNotes').value);
+    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+    
+    fetch('/orar/entry/create/', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('addEntryModal')).hide();
+            location.reload();
+        } else {
+            SchoolManager.showAlert(data.error || 'Eroare la adăugare!', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        SchoolManager.showAlert('Eroare de rețea!', 'danger');
+    });
+});
+
+// Week navigation
+function navigateWeek(direction) {
+    currentWeekOffset += direction;
+    // Implementation for week navigation
+    // This would typically reload the page with new week data
+    const url = new URL(window.location);
+    url.searchParams.set('week_offset', currentWeekOffset);
+    window.location.href = url.toString();
+}
+
+// Current time indicator
+function updateCurrentTimeIndicator() {
+    // Remove existing indicator
+    const existing = document.querySelector('.current-time-indicator');
+    if (existing) existing.remove();
+    
+    const now = new Date();
+    const currentDay = now.getDay(); // 0 = Sunday
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    
+    // Only show during school days and hours
+    if (currentDay < 1 || currentDay > 5 || currentHour < 8 || currentHour > 16) {
+        return;
+    }
+    
+    // Find the current hour cell
+    const hourNumber = currentHour - 7; // Convert to hour number (1-8)
+    const cell = document.querySelector(`[data-day="${currentDay}"][data-hour-number="${hourNumber}"]`);
+    
+    if (cell) {
+        const indicator = document.createElement('div');
+        indicator.className = 'current-time-indicator';
+        
+        // Calculate position within the hour (0-50 minutes)
+        const minuteProgress = Math.min(currentMinute, 50) / 50;
+        indicator.style.top = (minuteProgress * 100) + '%';
+        
+        cell.style.position = 'relative';
+        cell.appendChild(indicator);
+    }
+}
+
+// Export schedule
+function exportSchedule() {
+    const format = prompt('Selectează formatul de export:\n1. PDF\n2. Excel\n3. iCal\n\nIntrodu numărul:');
+    
+    let exportUrl = '/orar/export/';
+    switch(format) {
+        case '1':
+            exportUrl += '?format=pdf';
+            break;
+        case '2':
+            exportUrl += '?format=excel';
+            break;
+        case '3':
+            exportUrl += '?format=ical';
+            break;
+        default:
+            return;
+    }
+    
+    window.open(exportUrl, '_blank');
+}
+
+// Basic drag and drop initialization
+function initializeDragAndDrop() {
+    // This would initialize the drag and drop functionality
+    // Implementation depends on the ScheduleCalendar object
+    if (typeof ScheduleCalendar !== 'undefined' && ScheduleCalendar.initDragAndDrop) {
+        ScheduleCalendar.initDragAndDrop();
+    }
+}
+
+// Entry click handler for details
+document.addEventListener('click', function(e) {
+    const entry = e.target.closest('.schedule-entry');
+    if (entry && !e.target.closest('.btn')) {
+        const entryId = entry.dataset.entryId;
+        showEntryDetails(entryId);
+    }
+});
+
+function showEntryDetails(entryId) {
+    // Load and show entry details
+    fetch(`/orar/entry/${entryId}/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const modal = new bootstrap.Modal(document.getElementById('entryDetailsModal'));
+                document.getElementById('entryDetailsContent').innerHTML = data.html;
+                document.getElementById('editEntryBtn').onclick = () => editScheduleEntry(entryId);
+                modal.show();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            SchoolManager.showAlert('Eroare la încărcarea detaliilor!', 'danger');
+        });
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    // Ctrl+N - New entry
+    if (e.ctrlKey && e.key === 'n') {
+        e.preventDefault();
+        addScheduleEntry(1, 1); // Default to Monday, hour 1
+    }
+    
+    // Ctrl+P - Print
+    if (e.ctrlKey && e.key === 'p') {
+        e.preventDefault();
+        window.open('/orar/print/', '_blank');
+    }
+});
+</script>
+{% endblock %}

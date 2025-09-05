@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}Încarcă fișier - Teme{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Încarcă fișier pentru: {{ homework.titlu }}</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {{ form.non_field_errors }}
+
+                        <div class="mb-3">{{ form.nume.label_tag }} {{ form.nume }}</div>
+                        <div class="mb-3">{{ form.fisier.label_tag }} {{ form.fisier }}</div>
+                        <div class="mb-3">{{ form.tip.label_tag }} {{ form.tip }}</div>
+                        <div class="mb-3">{{ form.descriere.label_tag }} {{ form.descriere }}</div>
+
+                        <div class="d-flex justify-content-between mt-3">
+                            <a href="{% url 'homework:detail' homework.id %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-1"></i>Înapoi
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-upload me-1"></i>Încarcă
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+

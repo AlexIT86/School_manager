@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block title %}Modificări Orar{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Modificări în orar</h5>
+        <a href="{% url 'schedule:change_create' %}" class="btn btn-primary btn-sm">
+            <i class="fas fa-plus me-1"></i>Adaugă modificare
+        </a>
+    </div>
+
+    <div class="btn-group mb-3" role="group">
+        <a href="?period=current" class="btn btn-outline-secondary {% if current_period == 'current' %}active{% endif %}">Active</a>
+        <a href="?period=future" class="btn btn-outline-secondary {% if current_period == 'future' %}active{% endif %}">Viitoare</a>
+        <a href="?period=past" class="btn btn-outline-secondary {% if current_period == 'past' %}active{% endif %}">Trecute</a>
+    </div>
+
+    <div class="list-group">
+        {% for c in changes %}
+        <div class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+                <strong>{{ c.get_tip_schimbare_display }}</strong> — {{ c.schedule_entry.subject.nume }}
+                <div class="text-muted small">
+                    {{ c.data_start|date:'d.m.Y' }}{% if c.data_end %} – {{ c.data_end|date:'d.m.Y' }}{% endif %}
+                    {% if c.motiv %} • {{ c.motiv }}{% endif %}
+                </div>
+            </div>
+            <a href="{% url 'schedule:change_delete' c.id %}" class="btn btn-outline-danger btn-sm">
+                <i class="fas fa-trash"></i>
+            </a>
+        </div>
+        {% empty %}
+        <div class="alert alert-info">Nu sunt modificări pentru perioada selectată.</div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+

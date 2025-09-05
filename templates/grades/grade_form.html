@@ -1,0 +1,745 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+{% if grade %}Editează {{ grade.get_tip_display|lower }}{% else %}Adaugă notă/absență{% endif %} - School Manager
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.grade-form-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.form-section {
+    background: white;
+    border-radius: 15px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border-left: 5px solid var(--section-color, #4facfe);
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #f8f9fa;
+}
+
+.section-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--section-color, #4facfe);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+    font-size: 1.2rem;
+}
+
+.section-title {
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 0;
+}
+
+.section-description {
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-top: 0.25rem;
+}
+
+.form-floating .form-control {
+    border-radius: 12px;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.form-floating .form-control:focus {
+    border-color: #4facfe;
+    box-shadow: 0 0 0 0.2rem rgba(79, 172, 254, 0.25);
+    transform: translateY(-2px);
+}
+
+.form-floating label {
+    font-weight: 500;
+}
+
+.grade-preview {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+    border-radius: 15px;
+    padding: 1.5rem;
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.grade-circle {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: 800;
+    margin: 0 auto 1rem;
+}
+
+.subject-selector {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.subject-option {
+    padding: 1rem;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    background: white;
+}
+
+.subject-option:hover {
+    border-color: #4facfe;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(79, 172, 254, 0.1);
+}
+
+.subject-option.selected {
+    border-color: var(--subject-color, #4facfe);
+    background: linear-gradient(135deg, var(--subject-color, #4facfe) 0%, rgba(79, 172, 254, 0.1) 100%);
+    color: white;
+}
+
+.subject-name {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.subject-teacher {
+    font-size: 0.85rem;
+    opacity: 0.8;
+}
+
+.grade-type-tabs {
+    display: flex;
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 0.25rem;
+    margin-bottom: 2rem;
+}
+
+.grade-type-tab {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.grade-type-tab.active {
+    background: white;
+    color: #4facfe;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.conditional-fields {
+    display: none;
+}
+
+.conditional-fields.active {
+    display: block;
+    animation: fadeInUp 0.3s ease;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.grade-suggestions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.grade-suggestion {
+    padding: 0.25rem 0.75rem;
+    border: 2px solid #e9ecef;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    background: white;
+}
+
+.grade-suggestion:hover {
+    border-color: #4facfe;
+    background: #4facfe;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.form-actions {
+    background: #f8f9fa;
+    border-radius: 15px;
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.btn-save {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    border: none;
+    color: white;
+    padding: 0.75rem 2rem;
+    border-radius: 25px;
+    font-weight: 600;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+}
+
+.btn-save:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(40, 167, 69, 0.3);
+    color: white;
+}
+
+.error-message {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 0.75rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    border-left: 4px solid #dc3545;
+}
+
+@media (max-width: 768px) {
+    .grade-form-container {
+        padding: 0 1rem;
+    }
+    
+    .form-section {
+        padding: 1.5rem;
+    }
+    
+    .subject-selector {
+        grid-template-columns: 1fr;
+    }
+    
+    .grade-type-tabs {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="grade-form-container">
+        <!-- Header -->
+        <div class="text-center mb-4">
+            <h2 class="h3 mb-2">
+                <i class="fas fa-star me-2 text-warning"></i>
+                {% if grade %}
+                    Editează {{ grade.get_tip_display|lower }}
+                {% else %}
+                    Adaugă notă sau absență
+                {% endif %}
+            </h2>
+            <p class="text-muted">
+                {% if grade %}
+                    Modifică detaliile pentru {{ grade.subject.nume }}
+                {% else %}
+                    Completează formularul pentru a adăuga o nouă înregistrare
+                {% endif %}
+            </p>
+        </div>
+
+        <form method="post" class="grade-form" data-validate>
+            {% csrf_token %}
+            
+            <!-- Grade Type Selection -->
+            {% if not grade %}
+            <div class="form-section" style="--section-color: #4facfe;">
+                <div class="section-header">
+                    <div class="section-icon">
+                        <i class="fas fa-list"></i>
+                    </div>
+                    <div>
+                        <h5 class="section-title">Selectează tipul</h5>
+                        <p class="section-description">Alege dacă vrei să adaugi o notă sau o absență</p>
+                    </div>
+                </div>
+                
+                <div class="grade-type-tabs">
+                    <button type="button" class="grade-type-tab active" data-type="nota">
+                        <i class="fas fa-star me-2"></i>Notă
+                    </button>
+                    <button type="button" class="grade-type-tab" data-type="absenta">
+                        <i class="fas fa-calendar-times me-2"></i>Absență
+                    </button>
+                    <button type="button" class="grade-type-tab" data-type="intarziere">
+                        <i class="fas fa-clock me-2"></i>Întârziere
+                    </button>
+                </div>
+                
+                {{ form.tip.as_hidden }}
+            </div>
+            {% endif %}
+
+            <!-- Subject Selection -->
+            <div class="form-section" style="--section-color: #28a745;">
+                <div class="section-header">
+                    <div class="section-icon">
+                        <i class="fas fa-book"></i>
+                    </div>
+                    <div>
+                        <h5 class="section-title">Materia</h5>
+                        <p class="section-description">Selectează materia pentru care adaugi nota/absența</p>
+                    </div>
+                </div>
+                
+                {% if form.subject.field.queryset %}
+                <div class="subject-selector">
+                    {% for subject in form.subject.field.queryset %}
+                    <div class="subject-option" 
+                         data-subject-id="{{ subject.id }}"
+                         style="--subject-color: {{ subject.culoare }};"
+                         onclick="selectSubject({{ subject.id }}, '{{ subject.culoare }}')">
+                        <div class="subject-name">{{ subject.nume }}</div>
+                        {% if subject.nume_profesor %}
+                        <div class="subject-teacher">{{ subject.nume_profesor }}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {{ form.subject.as_hidden }}
+                {% else %}
+                {{ form.subject }}
+                {% endif %}
+                
+                {% if form.subject.errors %}
+                <div class="error-message">
+                    {{ form.subject.errors.0 }}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Grade Details -->
+            <div class="conditional-fields" id="nota-fields">
+                <div class="form-section" style="--section-color: #ffc107;">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <div>
+                            <h5 class="section-title">Detalii notă</h5>
+                            <p class="section-description">Introdu valoarea notei și detaliile evaluării</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Grade Preview -->
+                    <div class="grade-preview" id="gradePreview" style="display: none;">
+                        <div class="grade-circle" id="gradeCircle">--</div>
+                        <h6 id="gradeSubjectName">Materia</h6>
+                        <p class="mb-0" id="gradeDescription">Evaluare</p>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                {{ form.valoare }}
+                                <label for="{{ form.valoare.id_for_label }}">{{ form.valoare.label }}</label>
+                                <div class="grade-suggestions">
+                                    <span class="grade-suggestion" onclick="setGradeValue(10)">10</span>
+                                    <span class="grade-suggestion" onclick="setGradeValue(9)">9</span>
+                                    <span class="grade-suggestion" onclick="setGradeValue(8)">8</span>
+                                    <span class="grade-suggestion" onclick="setGradeValue(7)">7</span>
+                                    <span class="grade-suggestion" onclick="setGradeValue(6)">6</span>
+                                    <span class="grade-suggestion" onclick="setGradeValue(5)">5</span>
+                                </div>
+                            </div>
+                            {% if form.valoare.errors %}
+                            <div class="error-message">{{ form.valoare.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                {{ form.tip_evaluare }}
+                                <label for="{{ form.tip_evaluare.id_for_label }}">{{ form.tip_evaluare.label }}</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-floating mb-3">
+                        {{ form.descriere }}
+                        <label for="{{ form.descriere.id_for_label }}">{{ form.descriere.label }}</label>
+                    </div>
+                    
+                    <div class="form-check">
+                        {{ form.importante }}
+                        <label class="form-check-label" for="{{ form.importante.id_for_label }}">
+                            {{ form.importante.label }}
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Absence Details -->
+            <div class="conditional-fields" id="absenta-fields">
+                <div class="form-section" style="--section-color: #dc3545;">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <i class="fas fa-calendar-times"></i>
+                        </div>
+                        <div>
+                            <h5 class="section-title">Detalii absență</h5>
+                            <p class="section-description">Specifică dacă absența este motivată</p>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check mb-3">
+                                {{ form.motivata }}
+                                <label class="form-check-label" for="{{ form.motivata.id_for_label }}">
+                                    {{ form.motivata.label }}
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                {{ form.data_motivare }}
+                                <label for="{{ form.data_motivare.id_for_label }}">{{ form.data_motivare.label }}</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Common Details -->
+            <div class="form-section" style="--section-color: #17a2b8;">
+                <div class="section-header">
+                    <div class="section-icon">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <div>
+                        <h5 class="section-title">Informații generale</h5>
+                        <p class="section-description">Data și semestrul pentru această înregistrare</p>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-floating mb-3">
+                            {{ form.data }}
+                            <label for="{{ form.data.id_for_label }}">{{ form.data.label }}</label>
+                        </div>
+                        {% if form.data.errors %}
+                        <div class="error-message">{{ form.data.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating mb-3">
+                            {{ form.semestru }}
+                            <label for="{{ form.semestru.id_for_label }}">{{ form.semestru.label }}</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-floating">
+                    {{ form.note_personale }}
+                    <label for="{{ form.note_personale.id_for_label }}">{{ form.note_personale.label }}</label>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="form-actions">
+                <button type="submit" class="btn btn-save me-3">
+                    <i class="fas fa-save me-2"></i>
+                    {% if grade %}Actualizează{% else %}Salvează{% endif %}
+                </button>
+                <a href="{% url 'grades:overview' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times me-2"></i>Anulează
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let selectedSubjectColor = '#4facfe';
+let selectedSubjectName = '';
+
+document.addEventListener('DOMContentLoaded', function() {
+    initializeForm();
+    setupEventListeners();
+    
+    // Set initial values if editing
+    {% if grade %}
+    document.querySelector('[data-type="{{ grade.tip }}"]').click();
+    selectSubject({{ grade.subject.id }}, '{{ grade.subject.culoare }}');
+    {% else %}
+    document.querySelector('[data-type="nota"]').click();
+    {% endif %}
+});
+
+function initializeForm() {
+    // Initialize grade type
+    const gradeTypeButtons = document.querySelectorAll('.grade-type-tab');
+    gradeTypeButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            setGradeType(this.dataset.type);
+        });
+    });
+    
+    // Initialize grade value input
+    const gradeInput = document.getElementById('{{ form.valoare.id_for_label }}');
+    if (gradeInput) {
+        gradeInput.addEventListener('input', updateGradePreview);
+    }
+    
+    // Initialize subject selector
+    {% if not form.subject.field.queryset %}
+    const subjectSelect = document.getElementById('{{ form.subject.id_for_label }}');
+    if (subjectSelect) {
+        subjectSelect.addEventListener('change', function() {
+            const option = this.options[this.selectedIndex];
+            if (option.value) {
+                selectSubject(option.value, option.dataset.color || '#4facfe');
+            }
+        });
+    }
+    {% endif %}
+}
+
+function setupEventListeners() {
+    // Form validation
+    const form = document.querySelector('.grade-form');
+    form.addEventListener('submit', function(e) {
+        if (!validateForm()) {
+            e.preventDefault();
+        }
+    });
+    
+    // Description input for preview
+    const descInput = document.getElementById('{{ form.descriere.id_for_label }}');
+    if (descInput) {
+        descInput.addEventListener('input', updateGradePreview);
+    }
+    
+    const evalTypeSelect = document.getElementById('{{ form.tip_evaluare.id_for_label }}');
+    if (evalTypeSelect) {
+        evalTypeSelect.addEventListener('change', updateGradePreview);
+    }
+}
+
+function setGradeType(type) {
+    // Update active tab
+    document.querySelectorAll('.grade-type-tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    document.querySelector(`[data-type="${type}"]`).classList.add('active');
+    
+    // Set hidden input
+    document.getElementById('{{ form.tip.id_for_label }}').value = type;
+    
+    // Show/hide conditional fields
+    document.querySelectorAll('.conditional-fields').forEach(field => {
+        field.classList.remove('active');
+    });
+    
+    if (type === 'nota') {
+        document.getElementById('nota-fields').classList.add('active');
+    } else {
+        document.getElementById('absenta-fields').classList.add('active');
+    }
+}
+
+function selectSubject(subjectId, color) {
+    // Update visual selection
+    document.querySelectorAll('.subject-option').forEach(option => {
+        option.classList.remove('selected');
+    });
+    
+    const selectedOption = document.querySelector(`[data-subject-id="${subjectId}"]`);
+    if (selectedOption) {
+        selectedOption.classList.add('selected');
+        selectedSubjectName = selectedOption.querySelector('.subject-name').textContent;
+    }
+    
+    // Set hidden input
+    document.getElementById('{{ form.subject.id_for_label }}').value = subjectId;
+    
+    // Update colors
+    selectedSubjectColor = color;
+    updateGradePreview();
+}
+
+function setGradeValue(value) {
+    const gradeInput = document.getElementById('{{ form.valoare.id_for_label }}');
+    if (gradeInput) {
+        gradeInput.value = value;
+        updateGradePreview();
+        
+        // Visual feedback
+        gradeInput.focus();
+        gradeInput.style.transform = 'scale(1.05)';
+        setTimeout(() => {
+            gradeInput.style.transform = 'scale(1)';
+        }, 200);
+    }
+}
+
+function updateGradePreview() {
+    const gradeInput = document.getElementById('{{ form.valoare.id_for_label }}');
+    const descInput = document.getElementById('{{ form.descriere.id_for_label }}');
+    const evalTypeSelect = document.getElementById('{{ form.tip_evaluare.id_for_label }}');
+    const preview = document.getElementById('gradePreview');
+    const circle = document.getElementById('gradeCircle');
+    const subjectNameEl = document.getElementById('gradeSubjectName');
+    const descriptionEl = document.getElementById('gradeDescription');
+    
+    if (!gradeInput || !preview) return;
+    
+    const gradeValue = parseFloat(gradeInput.value);
+    
+    if (gradeValue && gradeValue >= 1 && gradeValue <= 10) {
+        preview.style.display = 'block';
+        circle.textContent = gradeValue;
+        
+        // Update circle color based on grade
+        let circleColor;
+        if (gradeValue >= 9) circleColor = '#28a745';
+        else if (gradeValue >= 7) circleColor = '#ffc107';
+        else if (gradeValue >= 5) circleColor = '#fd7e14';
+        else circleColor = '#dc3545';
+        
+        circle.style.backgroundColor = circleColor;
+        
+        // Update preview content
+        subjectNameEl.textContent = selectedSubjectName || 'Materia selectată';
+        
+        let description = 'Evaluare';
+        if (evalTypeSelect && evalTypeSelect.value) {
+            description = evalTypeSelect.options[evalTypeSelect.selectedIndex].text;
+        }
+        if (descInput && descInput.value) {
+            description += ' - ' + descInput.value;
+        }
+        descriptionEl.textContent = description;
+        
+    } else {
+        preview.style.display = 'none';
+    }
+}
+
+function validateForm() {
+    let isValid = true;
+    const errors = [];
+    
+    // Check subject selection
+    const subjectInput = document.getElementById('{{ form.subject.id_for_label }}');
+    if (!subjectInput.value) {
+        errors.push('Te rog selectează o materie.');
+        isValid = false;
+    }
+    
+    // Check grade type specific validation
+    const gradeType = document.getElementById('{{ form.tip.id_for_label }}').value;
+    
+    if (gradeType === 'nota') {
+        const gradeValue = document.getElementById('{{ form.valoare.id_for_label }}').value;
+        if (!gradeValue || gradeValue < 1 || gradeValue > 10) {
+            errors.push('Nota trebuie să fie între 1 și 10.');
+            isValid = false;
+        }
+    }
+    
+    // Check date
+    const dateInput = document.getElementById('{{ form.data.id_for_label }}');
+    if (!dateInput.value) {
+        errors.push('Te rog selectează data.');
+        isValid = false;
+    }
+    
+    // Show errors
+    if (!isValid) {
+        SchoolManager.showAlert('Te rog corectează erorile:\n' + errors.join('\n'), 'danger');
+    }
+    
+    return isValid;
+}
+
+// Auto-save draft (optional feature)
+let autoSaveTimeout;
+function scheduleAutoSave() {
+    clearTimeout(autoSaveTimeout);
+    autoSaveTimeout = setTimeout(autoSaveDraft, 30000); // Save after 30 seconds of inactivity
+}
+
+function autoSaveDraft() {
+    const formData = new FormData(document.querySelector('.grade-form'));
+    localStorage.setItem('gradeFormDraft', JSON.stringify(Object.fromEntries(formData)));
+}
+
+// Load draft on page load
+function loadDraft() {
+    const draft = localStorage.getItem('gradeFormDraft');
+    if (draft && !{{ grade|yesno:"true,false" }}) {
+        try {
+            const data = JSON.parse(draft);
+            Object.keys(data).forEach(key => {
+                const input = document.querySelector(`[name="${key}"]`);
+                if (input && data[key]) {
+                    input.value = data[key];
+                }
+            });
+            SchoolManager.showAlert('Am găsit o ciornă salvată. Datele au fost restaurate.', 'info');
+        } catch (e) {
+            console.error('Error loading draft:', e);
+        }
+    }
+}
+
+// Clear draft on successful submit
+document.querySelector('.grade-form').addEventListener('submit', function() {
+    localStorage.removeItem('gradeFormDraft');
+});
+
+// Initialize draft functionality
+document.addEventListener('DOMContentLoaded', function() {
+    loadDraft();
+    
+    // Schedule auto-save on form changes
+    document.querySelectorAll('input, select, textarea').forEach(input => {
+        input.addEventListener('change', scheduleAutoSave);
+        input.addEventListener('input', scheduleAutoSave);
+    });
+});
+</script>
+{% endblock %}

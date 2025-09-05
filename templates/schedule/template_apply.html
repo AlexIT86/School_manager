@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block title %}Aplică template orar{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning">
+                    <h5 class="mb-0">Aplică template: {{ template.nume }}</h5>
+                </div>
+                <div class="card-body">
+                    <p>Vrei să înlocuiești orarul curent ({{ current_entries_count }} intrări) cu intrările din acest template ({{ template_entries_count }})?</p>
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'schedule:templates' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-1"></i>Anulează
+                            </a>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fas fa-check me-1"></i>Aplică
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+

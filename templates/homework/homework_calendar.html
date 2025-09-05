@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+
+{% block title %}Calendar Teme{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Calendar - {{ month_name }} {{ current_year }}</h5>
+        <div>
+            <a class="btn btn-outline-secondary btn-sm" href="?month={{ prev_month }}&year={{ prev_year }}">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            <a class="btn btn-outline-secondary btn-sm" href="?month={{ next_month }}&year={{ next_year }}">
+                <i class="fas fa-chevron-right"></i>
+            </a>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-bordered align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Luni</th>
+                    <th>Marți</th>
+                    <th>Miercuri</th>
+                    <th>Joi</th>
+                    <th>Vineri</th>
+                    <th>Sâmbătă</th>
+                    <th>Duminică</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% with day=1 %}
+                {% for week in "12345" %}
+                <tr>
+                    {% for wd in "1234567" %}
+                        {% if forloop.parentloop.first and forloop.counter0 < first_weekday %}
+                            <td class="bg-light"></td>
+                        {% elif day <= days_in_month %}
+                            <td style="min-width: 180px;">
+                                <div class="d-flex justify-content-between">
+                                    <strong>{{ day }}</strong>
+                                </div>
+                                <div class="mt-2">
+                                    {% if calendar_data.day %}{% endif %}
+                                    {% for hw in calendar_data|get_item:day %}
+                                        <div class="small mb-1" style="border-left: 3px solid {{ hw.subject.culoare }}; padding-left: 6px;">
+                                            <a class="text-decoration-none" href="{% url 'homework:detail' hw.id %}">
+                                                {{ hw.subject.nume }} — {{ hw.titlu|truncatechars:30 }}
+                                            </a>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </td>
+                            {% with day=day|add:1 %}{% endwith %}
+                        {% else %}
+                            <td class="bg-light"></td>
+                        {% endif %}
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+                {% endwith %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+
