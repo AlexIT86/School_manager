@@ -64,6 +64,9 @@ class ScheduleEntryForm(forms.ModelForm):
     def __init__(self, user=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        # păstrează user pe instanța formularului pentru validări ulterioare
+        self.user = user
+
         if user:
             # Filtrează materiile pentru utilizatorul curent
             self.fields['subject'].queryset = Subject.objects.filter(
@@ -100,13 +103,36 @@ class ScheduleEntryForm(forms.ModelForm):
         ora_inceput = cleaned_data.get('ora_inceput')
         ora_sfarsit = cleaned_data.get('ora_sfarsit')
 
+        # Completează automat orele dacă lipsesc, pe baza profilului și a numărului orei
+        if (not ora_inceput or not ora_sfarsit) and numar_ora:
+            try:
+                from datetime import datetime, timedelta, time as time_cls
+                if self.user and hasattr(self.user, 'student_profile') and self.user.student_profile:
+                    base = self.user.student_profile.ore_start or time_cls(8, 0)
+                    durata = getattr(self.user.student_profile, 'durata_ora', 50) or 50
+                    pauza = getattr(self.user.student_profile, 'durata_pauza', 10) or 10
+                else:
+                    base = time_cls(8, 0)
+                    durata = 50
+                    pauza = 10
+
+                offset = max(0, int(numar_ora) - 1) * (durata + pauza)
+                start_dt = datetime.combine(datetime.today().date(), base) + timedelta(minutes=offset)
+                end_dt = start_dt + timedelta(minutes=durata)
+                cleaned_data['ora_inceput'] = start_dt.time()
+                cleaned_data['ora_sfarsit'] = end_dt.time()
+                ora_inceput = cleaned_data['ora_inceput']
+                ora_sfarsit = cleaned_data['ora_sfarsit']
+            except Exception:
+                pass
+
         # Verifică dacă ora de sfârșit este după ora de început
         if ora_inceput and ora_sfarsit:
             if ora_sfarsit <= ora_inceput:
                 raise ValidationError('Ora de sfârșit trebuie să fie după ora de început.')
 
         # Verifică suprapuneri doar dacă avem toate datele necesare
-        if zi_saptamana and numar_ora and hasattr(self, 'user'):
+        if zi_saptamana and numar_ora and getattr(self, 'user', None):
             # Verifică dacă există deja o intrare la aceeași oră și zi
             existing = ScheduleEntry.objects.filter(
                 user=self.user,
