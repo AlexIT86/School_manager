@@ -9,4 +9,4 @@ class GradesConfig(AppConfig):
 
     def ready(self):
         # Import signals pentru auto-calculare statistici
-        import apps.grades.signals
+        from . import signals  # noqa: F401
