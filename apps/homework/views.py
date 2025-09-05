@@ -20,7 +20,7 @@ def homework_list_view(request):
     user = request.user
 
     # Form pentru filtrare
-    filter_form = HomeworkFilterForm(request.GET, user=user)
+    filter_form = HomeworkFilterForm(user=user, data=request.GET)
 
     # Queryset de bază
     homework_list = Homework.objects.filter(user=user)
@@ -148,7 +148,7 @@ def homework_detail_view(request, homework_id):
 def homework_create_view(request):
     """Creare temă nouă"""
     if request.method == 'POST':
-        form = HomeworkForm(request.POST, user=request.user)
+        form = HomeworkForm(user=request.user, data=request.POST)
         if form.is_valid():
             homework = form.save(commit=False)
             homework.user = request.user
@@ -191,7 +191,7 @@ def homework_edit_view(request, homework_id):
     homework = get_object_or_404(Homework, id=homework_id, user=request.user)
 
     if request.method == 'POST':
-        form = HomeworkForm(request.POST, instance=homework, user=request.user)
+        form = HomeworkForm(user=request.user, data=request.POST, instance=homework)
         if form.is_valid():
             form.save()
             messages.success(request, f'Tema "{homework.titlu}" a fost actualizată!')
