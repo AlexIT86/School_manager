@@ -61,9 +61,9 @@ def schedule_calendar_view(request):
     week_end = week_start + timedelta(days=4)  # Vineri
 
     current_changes = ScheduleChange.objects.filter(
+        Q(data_end__isnull=True) | Q(data_end__gte=week_start),
         user=user,
-        data_start__lte=week_end,
-        Q(data_end__isnull=True) | Q(data_end__gte=week_start)
+        data_start__lte=week_end
     ).select_related('schedule_entry', 'subject_nou')
 
     # Informații despre săptămâna curentă
@@ -325,8 +325,8 @@ def schedule_changes_view(request):
     if period == 'current':
         # Modificările active acum
         changes = changes.filter(
-            data_start__lte=today,
-            Q(data_end__isnull=True) | Q(data_end__gte=today)
+            Q(data_end__isnull=True) | Q(data_end__gte=today),
+            data_start__lte=today
         )
     elif period == 'future':
         # Modificările viitoare
@@ -446,9 +446,9 @@ def schedule_today_view(request):
 
         # Verifică modificări pentru astăzi
         changes = ScheduleChange.objects.filter(
+            Q(data_end__isnull=True) | Q(data_end__gte=today),
             user=user,
-            data_start__lte=today,
-            Q(data_end__isnull=True) | Q(data_end__gte=today)
+            data_start__lte=today
         ).select_related('schedule_entry')
 
         # Aplică modificările la intrări
