@@ -74,6 +74,12 @@ class ScheduleEntryForm(forms.ModelForm):
         except Exception:
             pass
 
+        # Permite auto-completarea orelor în clean() fără erori de "required"
+        if 'ora_inceput' in self.fields:
+            self.fields['ora_inceput'].required = False
+        if 'ora_sfarsit' in self.fields:
+            self.fields['ora_sfarsit'].required = False
+
         if user:
             # Filtrează materiile pentru utilizatorul curent
             self.fields['subject'].queryset = Subject.objects.filter(
