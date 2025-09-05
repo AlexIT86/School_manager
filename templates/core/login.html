@@ -243,13 +243,14 @@ document.querySelector('.login-form').addEventListener('submit', function(e) {
     if (!username || !password) {
         e.preventDefault();
         alert('Te rog completează toate câmpurile!');
+        return;
     }
-});
-
-// Add loading state to button
-document.querySelector('.btn-login').addEventListener('click', function() {
-    this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Se conectează...';
-    this.disabled = true;
+    // Loading state on submit (nu blocăm submit-ul înainte să pornească)
+    const btn = this.querySelector('.btn-login');
+    if (btn) {
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Se conectează...';
+        btn.disabled = true;
+    }
 });
 </script>
 {% endblock %}

@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% block title %}Configurare profil - School Manager{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Configurare profil elev</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Completează câteva informații ca să personalizăm experiența ta.</p>
+
+                    <form method="post">
+                        {% csrf_token %}
+
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                                <div>{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                {{ form.clasa.label_tag }}
+                                {{ form.clasa }}
+                            </div>
+                            <div class="col-md-8">
+                                {{ form.scoala.label_tag }}
+                                {{ form.scoala }}
+                            </div>
+
+                            <div class="col-md-6">
+                                {{ form.telefon_parinte.label_tag }}
+                                {{ form.telefon_parinte }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.email_parinte.label_tag }}
+                                {{ form.email_parinte }}
+                            </div>
+
+                            <div class="col-md-4">
+                                {{ form.ore_start.label_tag }}
+                                {{ form.ore_start }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.durata_ora.label_tag }}
+                                {{ form.durata_ora }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.durata_pauza.label_tag }}
+                                {{ form.durata_pauza }}
+                            </div>
+
+                            <div class="col-md-6">
+                                {{ form.nr_ore_pe_zi.label_tag }}
+                                {{ form.nr_ore_pe_zi }}
+                            </div>
+
+                            <div class="col-12">
+                                <div class="form-check">
+                                    {{ form.reminder_teme }}
+                                    <label class="form-check-label" for="id_reminder_teme">Notificări pentru teme</label>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-check">
+                                    {{ form.reminder_note }}
+                                    <label class="form-check-label" for="id_reminder_note">Notificări pentru note noi</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.zile_reminder_teme.label_tag }}
+                                {{ form.zile_reminder_teme }}
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'core:dashboard' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-1"></i>Mai târziu
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>Salvează profilul
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+

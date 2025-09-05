@@ -145,10 +145,12 @@
             
             <!-- Time Slots and Schedule Grid -->
             {% for hour in hour_slots %}
+            {% with label=time_labels|index:forloop.counter0 %}
             <div class="time-slot" data-hour="{{ hour }}">
-                <div class="time-start">{{ (time_labels|index:forloop.counter0).start|time:"H:i" }}</div>
-                <div class="time-end">{{ (time_labels|index:forloop.counter0).end|time:"H:i" }}</div>
+                <div class="time-start">{{ label.start|time:"H:i" }}</div>
+                <div class="time-end">{{ label.end|time:"H:i" }}</div>
             </div>
+            {% endwith %}
             
             {% for day_name, day_data in schedule_data.items %}
             <div class="hour-cell {% if day_data.day_num == week_info.current_day and hour == current_hour %}current-hour{% endif %}"
