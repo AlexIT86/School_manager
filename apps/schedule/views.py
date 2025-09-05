@@ -115,11 +115,30 @@ def schedule_calendar_view(request):
 def schedule_entry_create_view(request):
     """Creare intrare nouă în orar"""
     if request.method == 'POST':
-        form = ScheduleEntryForm(request.POST, user=request.user)
+        form = ScheduleEntryForm(user=request.user, data=request.POST)
         if form.is_valid():
             try:
                 entry = form.save(commit=False)
                 entry.user = request.user
+
+                # Completează orele dacă lipsesc
+                if not entry.ora_inceput or not entry.ora_sfarsit:
+                    try:
+                        base = request.user.student_profile.ore_start
+                        durata = getattr(request.user.student_profile, 'durata_ora', 50) or 50
+                        pauza = getattr(request.user.student_profile, 'durata_pauza', 10) or 10
+                    except Exception:
+                        from datetime import time as time_cls
+                        base = time_cls(8, 0)
+                        durata = 50
+                        pauza = 10
+
+                    offset = max(0, (entry.numar_ora - 1)) * (durata + pauza)
+                    start_dt = datetime.combine(date.today(), base) + timedelta(minutes=offset)
+                    end_dt = start_dt + timedelta(minutes=durata)
+                    entry.ora_inceput = start_dt.time()
+                    entry.ora_sfarsit = end_dt.time()
+
                 entry.full_clean()  # Validează cu metodele custom din model
                 entry.save()
 
@@ -135,7 +154,12 @@ def schedule_entry_create_view(request):
 
                 return redirect('schedule:calendar')
             except ValidationError as e:
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'success': False, 'error': str(e)}, status=400)
                 form.add_error(None, e.message)
+        else:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'error': form.errors.get_json_data()}, status=400)
     else:
         form = ScheduleEntryForm(user=request.user)
 
@@ -169,7 +193,7 @@ def schedule_entry_edit_view(request, entry_id):
     entry = get_object_or_404(ScheduleEntry, id=entry_id, user=request.user)
 
     if request.method == 'POST':
-        form = ScheduleEntryForm(request.POST, instance=entry, user=request.user)
+        form = ScheduleEntryForm(user=request.user, data=request.POST, instance=entry)
         if form.is_valid():
             try:
                 entry = form.save()
