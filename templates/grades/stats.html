@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Statistici Note{% endblock %}
+
+{% block extra_css %}
+<style>
+.chart-card { border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,.08); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <h4 class="mb-3">Statistici Note</h4>
+
+  <div class="row g-3">
+    <div class="col-lg-4">
+      <div class="card chart-card">
+        <div class="card-header">Sumar</div>
+        <div class="card-body">
+          <ul class="list-unstyled mb-0">
+            <li><strong>Total note:</strong> {{ general_stats.total_grades }}</li>
+            <li><strong>Media:</strong> {{ general_stats.average|floatformat:2 }}</li>
+            <li><strong>Maxim:</strong> {{ general_stats.highest }}</li>
+            <li><strong>Minim:</strong> {{ general_stats.lowest }}</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-8">
+      <div class="card chart-card">
+        <div class="card-header">Distribuția notelor</div>
+        <div class="card-body">
+          <canvas id="gradesDistribution"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12">
+      <div class="card chart-card">
+        <div class="card-header">Evoluție lunară (ultimele 6 luni)</div>
+        <div class="card-body">
+          <canvas id="gradesMonthly"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12">
+      <div class="card chart-card">
+        <div class="card-header">Medii pe materii</div>
+        <div class="card-body">
+          <canvas id="subjectAverages"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Distribuția notelor 1..10
+  const distCtx = document.getElementById('gradesDistribution');
+  const distDict = { {% for k,v in grade_distribution.items %}"{{ k }}": {{ v }}{% if not forloop.last %}, {% endif %}{% endfor %} };
+  const distLabels = [1,2,3,4,5,6,7,8,9,10];
+  const distData = distLabels.map(k => distDict[k] || 0);
+  new Chart(distCtx, {
+    type: 'bar',
+    data: { labels: distLabels, datasets: [{ label: 'Număr note', data: distData, backgroundColor: '#4facfe' }]},
+    options: { responsive: true, scales: { y: { beginAtZero: true }}}
+  });
+
+  // Evoluție lunară
+  const months = [{% for x in months_data %}'{{ x.month }}'{% if not forloop.last %}, {% endif %}{% endfor %}];
+  const monthsAvg = [{% for x in months_data %}{{ x.average|default:0 }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+  const monthsCount = [{% for x in months_data %}{{ x.count|default:0 }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+  new Chart(document.getElementById('gradesMonthly'), {
+    type: 'line',
+    data: { labels: months, datasets: [
+      { label: 'Medie', data: monthsAvg, borderColor: '#28a745', tension: .3 },
+      { label: 'Număr note', data: monthsCount, borderColor: '#6c757d', tension: .3, yAxisID: 'y1' }
+    ]},
+    options: { responsive: true, scales: { y: { beginAtZero: true }, y1: { position: 'right', beginAtZero: true }}}
+  });
+
+  // Medii pe materii
+  const subjLabels = [{% for x in subject_averages %}'{{ x.subject.nume|escapejs }}'{% if not forloop.last %}, {% endif %}{% endfor %}];
+  const subjValues = [{% for x in subject_averages %}{{ x.average|default:0 }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+  new Chart(document.getElementById('subjectAverages'), {
+    type: 'bar',
+    data: { labels: subjLabels, datasets: [{ label: 'Media', data: subjValues, backgroundColor: '#ffc107' }]},
+    options: { responsive: true, scales: { y: { suggestedMin: 1, suggestedMax: 10 }}}
+  });
+});
+</script>
+{% endblock %}
+
+

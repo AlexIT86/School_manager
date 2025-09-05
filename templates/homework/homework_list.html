@@ -363,7 +363,7 @@
                                             {{ homework.titlu }}
                                         </a>
                                     </h5>
-                                    <span class="badge" style="background-color: {{ homework.subject.culoare }}20; color: {{ homework.subject.culoare }};">
+                                    <span class="badge" style="background-color: {{ homework.subject.culoare }}20; color: {{ homework.subject.culoare }};" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="{{ homework.subject.nume }}">
                                         {{ homework.subject.nume }}
                                     </span>
                                 </div>
@@ -386,7 +386,7 @@
                             <div class="homework-meta">
                                 <span>
                                     <i class="fas fa-calendar-alt me-1"></i>
-                                    <strong style="color: {{ homework.culoare_urgenta }};">
+                                    <strong style="color: {{ homework.culoare_urgenta }};" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Deadline: {{ homework.deadline|date:'d.m.Y' }}">
                                         {{ homework.status_display }}
                                     </strong> 
                                     ({{ homework.deadline|date:"d.m.Y" }})

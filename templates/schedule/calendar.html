@@ -162,6 +162,9 @@
                     <div class="schedule-entry {{ entry.tip_ora }}"
                          data-entry-id="{{ entry.id }}"
                          data-subject="{{ entry.subject.nume|lower }}"
+                         data-bs-toggle="tooltip"
+                         data-bs-placement="top"
+                         data-bs-title="{{ entry.subject.nume }} • {{ entry.ora_inceput|time:'H:i' }}-{{ entry.ora_sfarsit|time:'H:i' }}{% if entry.subject.nume_profesor %} • {{ entry.subject.nume_profesor }}{% endif %}{% if entry.sala %} • Sala {{ entry.sala }}{% endif %}"
                          style="--subject-color: {{ entry.subject.culoare }}; background-color: {{ entry.subject.culoare }};">
                         
                         <div class="subject-name">{{ entry.subject.nume }}</div>
