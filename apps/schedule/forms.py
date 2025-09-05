@@ -67,6 +67,13 @@ class ScheduleEntryForm(forms.ModelForm):
         # păstrează user pe instanța formularului pentru validări ulterioare
         self.user = user
 
+        # asigură-te că instanța are user setat înainte de validările ModelForm
+        try:
+            if user and not getattr(self.instance, 'user_id', None):
+                self.instance.user = user
+        except Exception:
+            pass
+
         if user:
             # Filtrează materiile pentru utilizatorul curent
             self.fields['subject'].queryset = Subject.objects.filter(
