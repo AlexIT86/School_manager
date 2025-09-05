@@ -1,1 +1,104 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ subject.nume }} - Materie{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">
+            <i class="fas fa-book me-2"></i>{{ subject.nume }}
+        </h4>
+        <div class="btn-group">
+            <a href="{% url 'subjects:edit' subject.id %}" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-edit me-1"></i>Editează
+            </a>
+            <a href="{% url 'subjects:files' subject.id %}" class="btn btn-outline-info btn-sm">
+                <i class="fas fa-folder-open me-1"></i>Fișiere
+            </a>
+            <a href="{% url 'homework:create' %}?subject={{ subject.id }}" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus me-1"></i>Adaugă temă
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-8">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-2"><strong>Profesor:</strong> {{ subject.nume_profesor|default:'-' }}</div>
+                            <div class="mb-2"><strong>Sala:</strong> {{ subject.sala|default:'-' }}</div>
+                            <div class="mb-2"><strong>Manual:</strong> {{ subject.manual|default:'-' }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-2"><strong>Activă:</strong> {% if subject.activa %}Da{% else %}Nu{% endif %}</div>
+                            <div class="mb-2"><strong>Culoare:</strong>
+                                <span class="badge" style="background-color: {{ subject.culoare }};">&nbsp;&nbsp;</span>
+                                <code class="ms-1">{{ subject.culoare }}</code>
+                            </div>
+                        </div>
+                    </div>
+                    {% if subject.descriere %}
+                    <div class="mt-3">
+                        <strong>Descriere:</strong>
+                        <div class="text-muted">{{ subject.descriere }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">Teme active</div>
+                <div class="card-body">
+                    {% if active_homework %}
+                        {% for hw in active_homework %}
+                        <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                            <div>
+                                <a href="{% url 'homework:detail' hw.id %}"><strong>{{ hw.titlu }}</strong></a>
+                                <div class="text-muted small">Deadline: {{ hw.deadline|date:"d.m.Y" }}</div>
+                            </div>
+                            <span class="badge" style="background-color: {{ hw.subject.culoare }}20; color: {{ hw.subject.culoare }};">{{ hw.get_prioritate_display }}</span>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-muted">Nu sunt teme active.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card mb-3">
+                <div class="card-header">Statistici</div>
+                <div class="card-body">
+                    <div class="mb-2"><strong>Media notelor:</strong> {{ stats.media_note|default:'-'|floatformat:2 }}</div>
+                    <div class="mb-2"><strong>Note în total:</strong> {{ stats.total_note|default:'0' }}</div>
+                    <div class="mb-2"><strong>Absențe:</strong> {{ stats.numar_absente|default:'0' }}</div>
+                    <div class="mb-2"><strong>Ore pe săptămână:</strong> {{ stats.ore_pe_saptamana|default:'0' }}</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">Fișiere recente</div>
+                <div class="card-body">
+                    {% if files %}
+                        {% for f in files|slice:":5" %}
+                        <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                            <div>
+                                <div class="fw-semibold">{{ f.nume }}</div>
+                                <small class="text-muted">{{ f.uploaded_at|date:"d.m.Y H:i" }} • {{ f.get_tip_display }}</small>
+                            </div>
+                            <a href="{% url 'subjects:file_download' subject.id f.id %}" class="btn btn-sm btn-outline-secondary">Descarcă</a>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-muted">Nu există fișiere.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
  
