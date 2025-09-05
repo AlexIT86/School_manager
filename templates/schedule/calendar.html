@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static schedule_extras %}
 
 {% block title %}Orar Școlar - School Manager{% endblock %}
 
@@ -146,8 +146,8 @@
             <!-- Time Slots and Schedule Grid -->
             {% for hour in hour_slots %}
             <div class="time-slot" data-hour="{{ hour }}">
-                <div class="time-start">{{ hour|add:7|time:"H:i" }}</div>
-                <div class="time-end">{{ hour|add:7|add_minutes:50|time:"H:i" }}</div>
+                <div class="time-start">{{ (time_labels|index:forloop.counter0).start|time:"H:i" }}</div>
+                <div class="time-end">{{ (time_labels|index:forloop.counter0).end|time:"H:i" }}</div>
             </div>
             
             {% for day_name, day_data in schedule_data.items %}
