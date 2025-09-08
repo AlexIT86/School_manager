@@ -695,7 +695,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Animate stat values
     const statValues = document.querySelectorAll('.stat-value');
     statValues.forEach(stat => {
-        const target = parseFloat(stat.getAttribute('data-target') || stat.textContent);
+        const raw = stat.getAttribute('data-target') || stat.textContent;
+        const target = parseFloat(String(raw).replace(',', '.'));
         if (!isNaN(target)) {
             const decimals = parseInt(stat.getAttribute('data-decimals') || (Number.isInteger(target) ? '0' : '2'), 10);
             animateCounter(stat, target, decimals);
@@ -713,7 +714,8 @@ function animateCounter(element, target, decimals) {
         const progress = Math.min(elapsed / duration, 1);
         const value = startValue + (target - startValue) * easeOutQuart(progress);
         
-        element.textContent = Number.isInteger(target) && decimals === 0 ? Math.floor(value) : value.toFixed(decimals);
+        const finalText = (Number.isInteger(target) && decimals === 0 ? Math.floor(value) : value.toFixed(decimals)) + '';
+        element.textContent = finalText.replace('.', ',');
         
         if (progress < 1) {
             requestAnimationFrame(updateCounter);
