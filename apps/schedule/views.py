@@ -13,6 +13,7 @@ from apps.homework.models import Homework
 from .forms import ScheduleEntryForm, ScheduleTemplateForm, ScheduleChangeForm, ScheduleImportForm
 from apps.subjects.models import Subject
 from apps.core.models import Notification
+from apps.grades.models import Grade
 
 
 @login_required
@@ -158,6 +159,44 @@ def schedule_calendar_view(request):
         'break_min': break_duration,
         'max_hours': max_hours,
     }
+
+    # Month events for client-side month view
+    try:
+        from calendar import monthrange
+        today_local = date.today()
+        year = int(request.GET.get('year', today_local.year))
+        month = int(request.GET.get('month', today_local.month))
+        first_day = date(year, month, 1)
+        last_day = date(year, month, monthrange(year, month)[1])
+
+        month_events = {}
+        # Homework
+        for hw in Homework.objects.filter(user=user, deadline__range=[first_day, last_day]).select_related('subject'):
+            day_num = hw.deadline.day
+            month_events.setdefault(day_num, []).append({
+                'type': 'homework',
+                'label': f"{hw.subject.nume}: {hw.titlu}",
+                'color': '#ff6b6b',
+                'url': f"/teme/{hw.id}/"
+            })
+        # Grades/Absences
+        for gr in Grade.objects.filter(user=user, data__range=[first_day, last_day]).select_related('subject'):
+            day_num = gr.data.day
+            label = gr.subject.nume
+            if gr.tip == 'nota':
+                label += f" {gr.valoare}"
+            else:
+                label += f" {gr.get_tip_display()}"
+            month_events.setdefault(day_num, []).append({
+                'type': 'grade',
+                'label': label,
+                'color': '#f9ca24',
+                'url': f"/note/{gr.id}/"
+            })
+
+        context['month_events_json'] = json.dumps(month_events)
+    except Exception:
+        context['month_events_json'] = '[]'
 
     return render(request, 'schedule/calendar.html', context)
 

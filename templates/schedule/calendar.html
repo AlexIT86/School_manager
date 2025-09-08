@@ -412,7 +412,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/calendar.js' %}"></script>
+<script src="{% static 'js/calendar.js' %}?v=2"></script>
 <script>
 // Global variables
 let currentWeekOffset = 0;
@@ -702,5 +702,9 @@ document.addEventListener('keydown', function(e) {
         window.open('/orar/print/', '_blank');
     }
 });
+</script>
+<script>
+// Month events from server
+window.SCHEDULE_MONTH_EVENTS = JSON.parse('{{ month_events_json|default:"[]"|escapejs }}');
 </script>
 {% endblock %}
