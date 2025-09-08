@@ -244,6 +244,10 @@ def schedule_entry_create_view(request):
                     entry.ora_inceput = start_dt.time()
                     entry.ora_sfarsit = end_dt.time()
 
+                # Preia sala implicit din materie dacă nu a fost furnizată
+                if (not entry.sala) and getattr(entry, 'subject', None) and getattr(entry.subject, 'sala', ''):
+                    entry.sala = entry.subject.sala
+
                 entry.full_clean()  # Validează cu metodele custom din model
                 entry.save()
 

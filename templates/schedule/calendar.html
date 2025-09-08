@@ -375,10 +375,7 @@
                             </select>
                         </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Sala (opțional)</label>
-                        <input type="text" class="form-control" id="entryRoom" placeholder="ex: A12, B5">
-                    </div>
+                    <!-- Sala nu mai e cerută; se preia automat din materie -->
                     <div class="mb-3">
                         <label class="form-label">Tipul orei</label>
                         <select class="form-control" id="entryType">
@@ -590,7 +587,7 @@ document.getElementById('addEntryForm').addEventListener('submit', function(e) {
     formData.append('subject', document.getElementById('entrySubject').value);
     formData.append('zi_saptamana', document.getElementById('entryDay').value);
     formData.append('numar_ora', document.getElementById('entryHour').value);
-    formData.append('sala', document.getElementById('entryRoom').value);
+    // Sala se setează automat din materie pe server
     formData.append('tip_ora', document.getElementById('entryType').value);
     formData.append('note', document.getElementById('entryNotes').value);
     formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
