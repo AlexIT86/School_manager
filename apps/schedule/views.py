@@ -36,16 +36,10 @@ def schedule_calendar_view(request):
         }
 
     # Materii distincte pentru filtre (evită duplicatele)
-    distinct_subject_rows = (
-        ScheduleEntry.objects.filter(user=user)
-        .select_related('subject')
-        .values('subject__nume', 'subject__culoare')
-        .distinct()
-    )
-    subject_filters = [
-        {'name': row['subject__nume'], 'color': row['subject__culoare']}
-        for row in distinct_subject_rows
-    ]
+    # Subiecte unice folosite în orar (bazat pe subject_id)
+    subject_ids_qs = ScheduleEntry.objects.filter(user=user).values_list('subject_id', flat=True).distinct()
+    subject_rows = Subject.objects.filter(id__in=subject_ids_qs).values('nume', 'culoare').order_by('nume')
+    subject_filters = [{'name': row['nume'], 'color': row['culoare']} for row in subject_rows]
 
     # Calculează orele disponibile și parametrii în funcție de profil
     max_hours = 8
