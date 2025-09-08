@@ -163,11 +163,13 @@ def homework_create_view(request):
                         data_reminder=reminder_date
                     )
 
-            # Upload inițial imagine (dacă a fost atașată în form)
+            # Upload inițial imagini (dacă au fost atașate în form)
             try:
-                file = request.FILES.get('initial_image')
-                if file:
-                    fname = request.POST.get('initial_file_name') or file.name.rsplit('.', 1)[0]
+                files = request.FILES.getlist('initial_images')
+                for idx, file in enumerate(files, start=1):
+                    fname = f"{homework.titlu}"[:40].strip() or file.name.rsplit('.', 1)[0]
+                    if len(files) > 1:
+                        fname = f"{fname}_{idx}"
                     HomeworkFile.objects.create(
                         homework=homework,
                         nume=fname,
