@@ -425,7 +425,7 @@
                                 <h6 class="subject-name">{{ stats.subject.nume }}</h6>
                                 {% if stats.media %}
                                 <div class="grade-circle" style="background-color: {{ stats.culoare_media }};">
-                                    {{ stats.media|floatformat:1 }}
+                                    {{ stats.media|floatformat:2 }}
                                 </div>
                                 {% else %}
                                 <div class="grade-circle" style="background-color: #6c757d;">
@@ -460,7 +460,7 @@
                                 </div>
                                 <div class="subject-stat">
                                     <div class="subject-stat-value">
-                                        {% if stats.nota_maxima %}{{ stats.nota_maxima|floatformat:1 }}{% else %}--{% endif %}
+                                        {% if stats.nota_maxima %}{{ stats.nota_maxima|floatformat:2 }}{% else %}--{% endif %}
                                     </div>
                                     <div class="subject-stat-label">Max</div>
                                 </div>
