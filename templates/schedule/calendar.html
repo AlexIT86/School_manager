@@ -621,29 +621,24 @@ function initializeDragAndDrop() {
 
 // Entry click handler for details
 document.addEventListener('click', function(e) {
+    // Dacă este un link către temă în card, lasă navigarea, dar oprește propagarea
+    const hwLink = e.target.closest('.hw-link');
+    if (hwLink) {
+        e.stopPropagation();
+        return;
+    }
+
     const entry = e.target.closest('.schedule-entry');
-    if (entry && !e.target.closest('.btn')) {
+    if (entry && !e.target.closest('.btn') && !e.target.closest('a')) {
+        e.stopPropagation();
         const entryId = entry.dataset.entryId;
         showEntryDetails(entryId);
     }
 });
 
 function showEntryDetails(entryId) {
-    // Load and show entry details
-    fetch(`/orar/entry/${entryId}/`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                const modal = new bootstrap.Modal(document.getElementById('entryDetailsModal'));
-                document.getElementById('entryDetailsContent').innerHTML = data.html;
-                document.getElementById('editEntryBtn').onclick = () => editScheduleEntry(entryId);
-                modal.show();
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            SchoolManager.showAlert('Eroare la încărcarea detaliilor!', 'danger');
-        });
+    // Nu avem endpoint JSON; navigăm direct la pagina de editare
+    window.location.href = `/orar/entry/${entryId}/edit/`;
 }
 
 // Keyboard shortcuts
