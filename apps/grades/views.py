@@ -279,17 +279,24 @@ def grade_detail_view(request, grade_id):
         tip='nota'
     ).exclude(id=grade.id).order_by('-data')[:5]
 
-    # Statistici pentru materie
+    # Statistici pentru materie (determină semestrul după data notei și numărul semestrului)
     subject_stats = None
     if grade.tip == 'nota':
-        try:
-            subject_stats = SubjectGradeStats.objects.get(
+        semester_obj = Semester.objects.filter(
+            user=request.user,
+            numar=grade.semestru,
+            data_inceput__lte=grade.data,
+            data_sfarsit__gte=grade.data
+        ).first()
+        if not semester_obj:
+            semester_obj = Semester.objects.filter(user=request.user, numar=grade.semestru).order_by('-an_scolar').first()
+        if semester_obj:
+            subject_stats, _ = SubjectGradeStats.objects.get_or_create(
                 user=request.user,
                 subject=grade.subject,
-                semester_id=grade.semestru
+                semester=semester_obj
             )
-        except SubjectGradeStats.DoesNotExist:
-            pass
+            subject_stats.calculeaza_statistici()
 
     context = {
         'grade': grade,
