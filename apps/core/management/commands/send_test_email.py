@@ -31,7 +31,7 @@ class Command(BaseCommand):
 
         try:
             send_email([to_addr], subject, html)
-            self.stdout.write(self.style.SUCCESS(f'Trimis email de test către {to_addr}')))
+            self.stdout.write(self.style.SUCCESS(f'Trimis email de test către {to_addr}'))
         except Exception as e:
             self.stderr.write(self.style.ERROR(f'Eroare la trimiterea emailului: {e}'))
 
