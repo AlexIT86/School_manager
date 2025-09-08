@@ -6,6 +6,8 @@ from django.db.models import Q, Count, Avg, Sum
 from django.core.paginator import Paginator
 from django.utils import timezone
 from datetime import date, timedelta
+import calendar
+import json
 import os
 
 from .models import Homework, HomeworkFile, HomeworkSession, HomeworkReminder
@@ -467,13 +469,30 @@ def homework_calendar_view(request):
         deadline__range=[first_day, last_day]
     ).select_related('subject')
 
-    # Organizează temele pe zile
+    # Organizează temele pe zile (map zi -> listă teme)
     calendar_data = {}
     for hw in homework_in_month:
-        day = hw.deadline.day
-        if day not in calendar_data:
-            calendar_data[day] = []
-        calendar_data[day].append(hw)
+        d = hw.deadline.day
+        calendar_data.setdefault(d, []).append(hw)
+
+    # Construiește săptămânile pentru afișare (7 zile/linie)
+    cal = calendar.Calendar(firstweekday=0)  # 0 = Luni
+    weeks = []
+    for week in cal.monthdayscalendar(year, month):
+        # week: [0 dacă nu e în lună altfel zi (1..31)]
+        week_cells = []
+        for day_num in week:
+            if day_num == 0:
+                week_cells.append({
+                    'day': None,
+                    'homeworks': []
+                })
+            else:
+                week_cells.append({
+                    'day': day_num,
+                    'homeworks': calendar_data.get(day_num, [])
+                })
+        weeks.append(week_cells)
 
     # Navegare luna anterioară/următoare
     if month == 1:
@@ -487,7 +506,7 @@ def homework_calendar_view(request):
         next_month, next_year = month + 1, year
 
     context = {
-        'calendar_data': calendar_data,
+        'calendar_weeks': weeks,
         'current_month': month,
         'current_year': year,
         'month_name': [
@@ -536,11 +555,17 @@ def homework_stats_view(request):
             'avg_time': subject_completed.aggregate(avg=Avg('timp_lucrat'))['avg'] or 0,
         })
 
-    # Productivitate pe zile din săptămână
-    from django.db.models import Case, When, IntegerField
-    weekday_stats = completed_homework.extra(
-        select={'weekday': "strftime('%%w', data_finalizare)"}
-    ).values('weekday').annotate(count=Count('id')).order_by('weekday')
+    # Productivitate pe zile din săptămână (0=Luni..6=Duminică)
+    from django.db.models.functions import ExtractWeekDay
+    # ExtractWeekDay: în SQLite/Django, duminica poate fi 1; normalizăm la 0..6 cu un mapping
+    raw_week = completed_homework.annotate(wd=ExtractWeekDay('data_finalizare')).values('wd').annotate(count=Count('id'))
+    weekday_stats = []
+    for item in raw_week:
+        wd_val = int(item['wd'] or 0)
+        # Django ExtractWeekDay: 1=Duminică ... 7=Sâmbătă
+        normalized = (wd_val + 5) % 7  # 1->6, 2->0, 3->1, ..., 7->5
+        weekday_stats.append({'weekday': normalized, 'count': item['count']})
+    weekday_stats.sort(key=lambda x: x['weekday'])
 
     context = {
         'general_stats': general_stats,

@@ -31,19 +31,18 @@
                 </tr>
             </thead>
             <tbody>
-                {% with day=1 %}
-                {% for week in "12345" %}
+                {% for week in calendar_weeks %}
                 <tr>
-                    {% for wd in "1234567" %}
-                        {% if forloop.parentloop.first and forloop.counter0 < first_weekday %}
+                    {% for cell in week %}
+                        {% if not cell.day %}
                             <td class="bg-light"></td>
-                        {% elif day <= days_in_month %}
+                        {% else %}
                             <td style="min-width: 180px;">
                                 <div class="d-flex justify-content-between">
-                                    <strong>{{ day }}</strong>
+                                    <strong>{{ cell.day }}</strong>
                                 </div>
                                 <div class="mt-2">
-                                    {% for hw in calendar_data|get_item:day %}
+                                    {% for hw in cell.homeworks %}
                                         <div class="small mb-1" style="border-left: 3px solid {{ hw.subject.culoare }}; padding-left: 6px;">
                                             <a class="text-decoration-none" href="{% url 'homework:detail' hw.id %}">
                                                 {{ hw.subject.nume }} — {{ hw.titlu|truncatechars:30 }}
@@ -52,14 +51,10 @@
                                     {% endfor %}
                                 </div>
                             </td>
-                            {% with day=day|add:1 %}{% endwith %}
-                        {% else %}
-                            <td class="bg-light"></td>
                         {% endif %}
                     {% endfor %}
                 </tr>
                 {% endfor %}
-                {% endwith %}
             </tbody>
         </table>
     </div>

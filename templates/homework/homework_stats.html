@@ -49,7 +49,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   // Productivitate pe zile
-  const weekdayMap = ['D', 'L', 'Ma', 'Mi', 'J', 'V', 'S'];
+  const weekdayMap = ['L', 'Ma', 'Mi', 'J', 'V', 'S', 'D'];
   const wd = {{ weekday_stats|safe }}.map(x => ({ label: weekdayMap[parseInt(x.weekday, 10)], value: x.count }));
   new Chart(document.getElementById('weekdayProductivity'), {
     type: 'bar',
