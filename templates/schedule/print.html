@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Orar pentru tipărire{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* Layout curat pentru print */
+  .print-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+  .print-meta {
+    color: #6c757d;
+    font-size: 0.95rem;
+  }
+  .day-card {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    page-break-inside: avoid;
+  }
+  .day-title {
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+  }
+  .day-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .day-table th, .day-table td {
+    border: 1px solid #dee2e6;
+    padding: 0.5rem 0.6rem;
+    vertical-align: top;
+    font-size: 0.95rem;
+  }
+  .day-table thead th {
+    background: #f8f9fa;
+    font-weight: 600;
+    text-align: left;
+  }
+  .no-print {
+    display: inline-block;
+  }
+  @media print {
+    .no-print { display: none !important; }
+    .navbar, .footer, .schedule-filters, .calendar-header { display: none !important; }
+    body { background: white !important; }
+    .container-print { width: 100%; margin: 0; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container container-print py-4">
+  <div class="print-header">
+    <div>
+      <h3 class="mb-1">Orar școlar</h3>
+      <div class="print-meta">
+        Data tipăririi: {{ print_date|date:"d.m.Y" }}
+        {% if profile %}
+          • Start: {{ profile.ore_start|time:"H:i" }} • Durata oră: {{ profile.durata_ora }} min • Pauză: {{ profile.durata_pauza }} min • Max/zi: {{ profile.nr_ore_pe_zi }}
+        {% endif %}
+      </div>
+    </div>
+    <div>
+      <button type="button" class="btn btn-outline-secondary no-print" onclick="window.print()">
+        <i class="fas fa-print me-1"></i>Printează
+      </button>
+    </div>
+  </div>
+
+  <div class="row">
+    {% for day_name in weekdays %}
+    <div class="col-12 col-md-6">
+      <div class="day-card">
+        <div class="day-title">{{ day_name }}</div>
+        <table class="day-table">
+          <thead>
+            <tr>
+              <th style="width: 60px;">Ora</th>
+              <th>Materie</th>
+              <th style="width: 140px;">Interval</th>
+              <th style="width: 100px;">Sala</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for entry in schedule_data|get_item:day_name %}
+            <tr>
+              <td>{{ entry.numar_ora }}</td>
+              <td>
+                <strong>{{ entry.subject.nume }}</strong>
+                {% if entry.note %}<div class="text-muted small">{{ entry.note }}</div>{% endif %}
+              </td>
+              <td>
+                {% if entry.ora_inceput and entry.ora_sfarsit %}
+                  {{ entry.ora_inceput|time:"H:i" }}–{{ entry.ora_sfarsit|time:"H:i" }}
+                {% else %}
+                  —
+                {% endif %}
+              </td>
+              <td>{% if entry.sala %}{{ entry.sala }}{% else %}—{% endif %}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="4" class="text-muted">Nu există ore programate.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+
+
