@@ -163,6 +163,21 @@ def homework_create_view(request):
                         data_reminder=reminder_date
                     )
 
+            # Upload inițial imagine (dacă a fost atașată în form)
+            try:
+                file = request.FILES.get('initial_image')
+                if file:
+                    fname = request.POST.get('initial_file_name') or file.name.rsplit('.', 1)[0]
+                    HomeworkFile.objects.create(
+                        homework=homework,
+                        nume=fname,
+                        fisier=file,
+                        tip='imagine',
+                        descriere='Poză atașată la creare'
+                    )
+            except Exception:
+                pass
+
             messages.success(request, f'Tema "{homework.titlu}" a fost adăugată cu succes!')
             return redirect('homework:detail', homework_id=homework.id)
     else:
