@@ -621,25 +621,19 @@ function initializeDragAndDrop() {
 
 // Entry click handler for details
 document.addEventListener('click', function(e) {
-    // Dacă este un link către temă în card, lasă navigarea, dar oprește propagarea
+    // Link către temă: lasă navigarea, dar nu lăsa click-ul să ajungă la celula de oră
     const hwLink = e.target.closest('.hw-link');
-    if (hwLink) {
-        e.stopPropagation();
-        return;
-    }
+    if (hwLink) { e.stopPropagation(); return; }
 
+    // Click pe cardul orei: nu facem nimic, doar oprim propagarea ca să nu se deschidă modalul de adăugare
     const entry = e.target.closest('.schedule-entry');
     if (entry && !e.target.closest('.btn') && !e.target.closest('a')) {
         e.stopPropagation();
-        const entryId = entry.dataset.entryId;
-        showEntryDetails(entryId);
+        return;
     }
 });
 
-function showEntryDetails(entryId) {
-    // Nu avem endpoint JSON; navigăm direct la pagina de editare
-    window.location.href = `/orar/entry/${entryId}/edit/`;
-}
+// Dezactivat: click pe cardul orei nu navighează nicăieri
 
 // Keyboard shortcuts
 document.addEventListener('keydown', function(e) {
