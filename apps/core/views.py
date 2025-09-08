@@ -120,6 +120,18 @@ def dashboard_view(request):
     ).order_by('-created_at')[:5]
 
     # Statistici rapide pentru carduri
+    # Media luna aceasta (2 zecimale)
+    avg_month = Grade.objects.filter(
+        user=user,
+        tip='nota',
+        data__month=today.month,
+        data__year=today.year
+    ).aggregate(avg=Avg('valoare'))['avg'] or 0
+    try:
+        avg_month = round(float(avg_month), 2)
+    except Exception:
+        avg_month = 0
+
     stats = {
         'total_homework': Homework.objects.filter(user=user, finalizata=False).count(),
         'overdue_homework': Homework.objects.filter(
@@ -133,18 +145,18 @@ def dashboard_view(request):
             data__month=today.month,
             data__year=today.year
         ).count(),
-        'avg_grade_this_month': Grade.objects.filter(
-            user=user,
-            tip='nota',
-            data__month=today.month,
-            data__year=today.year
-        ).aggregate(avg=Avg('valoare'))['avg'] or 0,
+        'avg_grade_this_month': avg_month,
     }
 
     # Media generală
     all_grades = Grade.objects.filter(user=user, tip='nota')
     if all_grades.exists():
-        stats['general_average'] = all_grades.aggregate(avg=Avg('valoare'))['avg']
+        gavg = all_grades.aggregate(avg=Avg('valoare'))['avg'] or 0
+        try:
+            gavg = round(float(gavg), 2)
+        except Exception:
+            gavg = 0
+        stats['general_average'] = gavg
     else:
         stats['general_average'] = 0
 
