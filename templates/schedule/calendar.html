@@ -100,11 +100,11 @@
                 <div class="filter-group">
                     <span class="filter-label">Vizualizare:</span>
                     <div class="btn-group" role="group">
-                        <input type="radio" class="btn-check" name="viewMode" id="weekView" checked>
+                        <input type="radio" class="btn-check" name="viewMode" id="weekView" {% if not request.GET.view == 'month' %}checked{% endif %}>
                         <label class="btn btn-outline-primary" for="weekView">
                             <i class="fas fa-calendar-week me-1"></i>Săptămânal
                         </label>
-                        <input type="radio" class="btn-check" name="viewMode" id="monthView">
+                        <input type="radio" class="btn-check" name="viewMode" id="monthView" {% if request.GET.view == 'month' %}checked{% endif %}>
                         <label class="btn btn-outline-primary" for="monthView">
                             <i class="fas fa-calendar me-1"></i>Lunar
                         </label>
@@ -305,7 +305,7 @@
     </div>
     {% endif %}
 <!-- Month View (hidden by default, toggled by JS) -->
-<div class="month-calendar d-none" id="monthCalendar">
+<div class="month-calendar d-none" id="monthCalendar" data-year="{{ year_current }}" data-month="{{ month_current }}">
     <div class="day-header">Luni</div>
     <div class="day-header">Marți</div>
     <div class="day-header">Miercuri</div>
@@ -319,8 +319,8 @@
 
 <div class="calendar-nav mt-3 d-none" id="monthNav">
     <div class="btn-group">
-        <button class="btn btn-outline-secondary" id="prevMonthBtn"><i class="fas fa-chevron-left"></i></button>
-        <button class="btn btn-outline-secondary" id="nextMonthBtn"><i class="fas fa-chevron-right"></i></button>
+        <button class="btn btn-outline-secondary" id="prevMonthBtn" type="button"><i class="fas fa-chevron-left"></i></button>
+        <button class="btn btn-outline-secondary" id="nextMonthBtn" type="button"><i class="fas fa-chevron-right"></i></button>
     </div>
     <div>
         <span class="text-muted">Luna: {{ month_current }}/{{ year_current }}</span>
@@ -718,5 +718,6 @@ document.addEventListener('keydown', function(e) {
 <script>
 // Month events from server
 window.SCHEDULE_MONTH_EVENTS = JSON.parse('{{ month_events_json|default:"[]"|escapejs }}');
+window.WEEKDAY_SUBJECT_COUNTS = JSON.parse('{{ weekday_subject_counts_json|default:"{}"|escapejs }}');
 </script>
 {% endblock %}

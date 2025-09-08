@@ -54,6 +54,16 @@ def schedule_calendar_view(request):
     subject_rows = Subject.objects.filter(id__in=subject_ids_qs).values('nume', 'culoare').order_by('nume')
     subject_filters = [{'name': row['nume'], 'color': row['culoare']} for row in subject_rows]
 
+    # Număr de materii distincte per zi a săptămânii (pentru vizualizarea lunară)
+    weekday_subject_counts = {}
+    for day_num in range(1, 6):
+        day_name = weekdays[day_num - 1]
+        unique_subject_ids = {entry.subject_id for entry in schedule_data.get(day_name, {}).get('entries', [])}
+        weekday_subject_counts[day_num] = len(unique_subject_ids)
+    # weekend (Sâmbătă=6, Duminică=7)
+    weekday_subject_counts[6] = 0
+    weekday_subject_counts[7] = 0
+
     # Calculează orele disponibile și parametrii în funcție de profil
     max_hours = 8
     start_base = time(8, 0)
@@ -158,6 +168,7 @@ def schedule_calendar_view(request):
         'duration_min': class_duration,
         'break_min': break_duration,
         'max_hours': max_hours,
+        'weekday_subject_counts_json': json.dumps(weekday_subject_counts),
     }
 
     # Month events for client-side month view
