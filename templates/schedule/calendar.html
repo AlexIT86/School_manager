@@ -154,8 +154,7 @@
             <div class="hour-cell {% if day_data.day_num == week_info.current_day and hour == current_hour %}current-hour{% endif %}"
                  data-day="{{ day_data.day_num }}" 
                  data-hour="{{ hour }}"
-                 data-hour-number="{{ hour }}"
-                 onclick="addScheduleEntry({{ day_data.day_num }}, {{ hour }})">
+                 data-hour-number="{{ hour }}">
                 
                 {% for entry in day_data.entries %}
                     {% if entry.numar_ora == hour %}
@@ -165,7 +164,8 @@
                          data-bs-toggle="tooltip"
                          data-bs-placement="top"
                          data-bs-title="{{ entry.subject.nume }} • {{ entry.ora_inceput|time:'H:i' }}-{{ entry.ora_sfarsit|time:'H:i' }}{% if entry.subject.nume_profesor %} • {{ entry.subject.nume_profesor }}{% endif %}{% if entry.sala %} • Sala {{ entry.sala }}{% endif %}"
-                         style="--subject-color: {{ entry.subject.culoare }}; background-color: {{ entry.subject.culoare }};">
+                         style="--subject-color: {{ entry.subject.culoare }}; background-color: {{ entry.subject.culoare }};"
+                         onclick="event.stopPropagation()">
                         
                         <div class="subject-name">{{ entry.subject.nume }}</div>
                         <div class="subject-details">
@@ -216,7 +216,7 @@
                 {% endfor %}
                 
                 {% if not day_data.entries or hour not in day_data.entries|get_hours %}
-                <div class="empty-slot-indicator">
+                <div class="empty-slot-indicator" onclick="addScheduleEntry({{ day_data.day_num }}, {{ hour }})">
                     <i class="fas fa-plus"></i>
                 </div>
                 {% endif %}
@@ -620,17 +620,10 @@ function initializeDragAndDrop() {
 }
 
 // Entry click handler for details
+// Oprește propagarea click-ului din cardul orei către celula părinte
 document.addEventListener('click', function(e) {
-    // Link către temă: lasă navigarea, dar nu lăsa click-ul să ajungă la celula de oră
-    const hwLink = e.target.closest('.hw-link');
-    if (hwLink) { e.stopPropagation(); return; }
-
-    // Click pe cardul orei: nu facem nimic, doar oprim propagarea ca să nu se deschidă modalul de adăugare
     const entry = e.target.closest('.schedule-entry');
-    if (entry && !e.target.closest('.btn') && !e.target.closest('a')) {
-        e.stopPropagation();
-        return;
-    }
+    if (entry) { e.stopPropagation(); }
 });
 
 // Dezactivat: click pe cardul orei nu navighează nicăieri
