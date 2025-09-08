@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Detalii notă/absență{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex align-items-center mb-3">
+        <h2 class="h4 mb-0 me-auto">
+            <i class="fas fa-clipboard-list me-2 text-primary"></i>
+            Detalii {{ grade.get_tip_display|lower }} - {{ grade.subject.nume }}
+        </h2>
+        <div class="btn-group">
+            <a href="/note/{{ grade.id }}/edit/" class="btn btn-outline-primary">
+                <i class="fas fa-edit me-1"></i>Editează
+            </a>
+            <a href="/note/{{ grade.id }}/delete/" class="btn btn-outline-danger">
+                <i class="fas fa-trash me-1"></i>Șterge
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-sm-6">
+                            <div class="text-muted small">Materia</div>
+                            <div class="fw-semibold">{{ grade.subject.nume }}</div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="text-muted small">Tip</div>
+                            <div class="fw-semibold">{{ grade.get_tip_display }}</div>
+                        </div>
+                    </div>
+
+                    {% if grade.tip == 'nota' %}
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <div class="text-muted small">Nota</div>
+                            <div class="fw-bold fs-4">{{ grade.valoare|default:'—' }}</div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="text-muted small">Tip evaluare</div>
+                            <div class="fw-semibold">{{ grade.get_tip_evaluare_display|default:grade.tip_evaluare|default:'—' }}</div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="text-muted small">Importanță</div>
+                            <div class="fw-semibold">{% if grade.importante %}Importantă{% else %}—{% endif %}</div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="row mb-3">
+                        <div class="col-sm-6">
+                            <div class="text-muted small">Motivată</div>
+                            <div class="fw-semibold">{% if grade.tip == 'absenta_motivata' or grade.motivata %}Da{% else %}Nu{% endif %}</div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="text-muted small">Data motivării</div>
+                            <div class="fw-semibold">{{ grade.data_motivare|date:'d.m.Y'|default:'—' }}</div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <div class="text-muted small">Data</div>
+                            <div class="fw-semibold">{{ grade.data|date:'d.m.Y' }}</div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="text-muted small">Semestrul</div>
+                            <div class="fw-semibold">{{ grade.semestru }}</div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="text-muted small">Utilizator</div>
+                            <div class="fw-semibold">{{ request.user.username }}</div>
+                        </div>
+                    </div>
+
+                    {% if grade.descriere %}
+                    <div class="mb-3">
+                        <div class="text-muted small">Descriere</div>
+                        <div>{{ grade.descriere }}</div>
+                    </div>
+                    {% endif %}
+
+                    {% if grade.note_personale %}
+                    <div class="mb-2">
+                        <div class="text-muted small">Notițe personale</div>
+                        <div class="fst-italic">{{ grade.note_personale }}</div>
+                    </div>
+                    {% endif %}
+
+                    <div class="mt-4">
+                        <a href="/note/" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>Înapoi la toate notele
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            {% if subject_stats %}
+            <div class="card mb-4">
+                <div class="card-header bg-light fw-semibold">
+                    Statistici materie (semestrul {{ grade.semestru }})
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Media</span>
+                        <span class="fw-semibold">{{ subject_stats.media|default:'—' }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Nr. note</span>
+                        <span class="fw-semibold">{{ subject_stats.numar_note|default:'—' }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Maxim</span>
+                        <span class="fw-semibold">{{ subject_stats.maxim|default:'—' }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Minim</span>
+                        <span class="fw-semibold">{{ subject_stats.minim|default:'—' }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if related_grades %}
+            <div class="card">
+                <div class="card-header bg-light fw-semibold">
+                    Alte note recente la {{ grade.subject.nume }}
+                </div>
+                <ul class="list-group list-group-flush">
+                    {% for g in related_grades %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <a href="/note/{{ g.id }}/" class="text-decoration-none">{{ g.data|date:'d.m.Y' }}</a>
+                        <span class="badge bg-primary rounded-pill">{{ g.valoare }}</span>
+                    </li>
+                    {% empty %}
+                    <li class="list-group-item text-muted">Nu există alte note recente.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+

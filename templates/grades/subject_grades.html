@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Note pentru {{ subject.nume }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex align-items-center mb-3">
+        <h2 class="h4 mb-0 me-auto">
+            <i class="fas fa-book-open me-2 text-primary"></i>
+            Note și absențe - {{ subject.nume }}
+        </h2>
+        <a href="/note/create/?subject={{ subject.id }}" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i>Adaugă notă/absență
+        </a>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-light fw-semibold">Toate înregistrările</div>
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Tip</th>
+                                <th>Detalii</th>
+                                <th class="text-end">Acțiuni</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for g in notes %}
+                            <tr>
+                                <td>{{ g.data|date:'d.m.Y' }}</td>
+                                <td><span class="badge bg-primary">Notă</span></td>
+                                <td>
+                                    <strong>{{ g.valoare }}</strong>
+                                    {% if g.tip_evaluare %}<span class="text-muted">• {{ g.tip_evaluare }}</span>{% endif %}
+                                    {% if g.descriere %}<div class="small text-muted">{{ g.descriere }}</div>{% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <a class="btn btn-sm btn-outline-secondary" href="/note/{{ g.id }}/">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+
+                            {% for a in absences %}
+                            <tr>
+                                <td>{{ a.data|date:'d.m.Y' }}</td>
+                                <td>
+                                    {% if a.tip == 'absenta_motivata' %}
+                                        <span class="badge bg-success">Absență motivată</span>
+                                    {% else %}
+                                        <span class="badge bg-warning text-dark">Absență</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if a.motivata %}
+                                        <span class="text-muted small">Motivată la {{ a.data_motivare|date:'d.m.Y' }}</span>
+                                    {% else %}
+                                        <span class="text-muted small">Nemotivată</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <a class="btn btn-sm btn-outline-secondary" href="/note/{{ a.id }}/">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+
+                            {% if not notes and not absences %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-4">Nu există înregistrări pentru această materie.</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            {% if subject_stats %}
+            <div class="card">
+                <div class="card-header bg-light fw-semibold">Statistici</div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Media</span>
+                        <span class="fw-semibold">{{ subject_stats.media|default:'—' }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Nr. note</span>
+                        <span class="fw-semibold">{{ subject_stats.numar_note|default:'—' }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Maxim</span>
+                        <span class="fw-semibold">{{ subject_stats.maxim|default:'—' }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Minim</span>
+                        <span class="fw-semibold">{{ subject_stats.minim|default:'—' }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+

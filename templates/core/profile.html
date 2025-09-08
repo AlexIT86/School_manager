@@ -7,14 +7,13 @@
     <div class="row justify-content-center">
         <div class="col-lg-8">
             <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">Profilul meu</h5>
-                    {% if profile and profile.clasa %}
-                        <span class="badge bg-light text-dark">Clasa {{ profile.clasa }}</span>
-                    {% endif %}
                 </div>
                 <div class="card-body">
-                    <form method="post">
+                    <p class="text-muted mb-3">Actualizează detaliile profilului și preferințele pentru orar și notificări.</p>
+
+                    <form method="post" novalidate>
                         {% csrf_token %}
 
                         {% if form.non_field_errors %}
@@ -80,9 +79,12 @@
                             </div>
                         </div>
 
-                        <div class="d-flex justify-content-end mt-4">
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'core:dashboard' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-1"></i> Înapoi la dashboard
+                            </a>
                             <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save me-1"></i>Salvează
+                                <i class="fas fa-save me-1"></i> Salvează modificările
                             </button>
                         </div>
                     </form>

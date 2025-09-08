@@ -96,7 +96,7 @@ def grades_list_view(request):
     user = request.user
 
     # Form pentru filtrare
-    filter_form = GradeFilterForm(request.GET, user=user)
+    filter_form = GradeFilterForm(data=request.GET, user=user)
 
     # Queryset de bază
     grades = Grade.objects.filter(user=user)
@@ -156,7 +156,7 @@ def grades_list_view(request):
 def grade_create_view(request):
     """Adăugare notă/absență nouă"""
     if request.method == 'POST':
-        form = GradeForm(request.POST, user=request.user)
+        form = GradeForm(data=request.POST, user=request.user)
         if form.is_valid():
             grade = form.save(commit=False)
             grade.user = request.user
@@ -266,7 +266,7 @@ def grade_edit_view(request, grade_id):
     grade = get_object_or_404(Grade, id=grade_id, user=request.user)
 
     if request.method == 'POST':
-        form = GradeForm(request.POST, instance=grade, user=request.user)
+        form = GradeForm(data=request.POST, instance=grade, user=request.user)
         if form.is_valid():
             form.save()
 
@@ -424,7 +424,7 @@ def grade_goals_view(request):
 def grade_goal_create_view(request):
     """Creare obiectiv de notă"""
     if request.method == 'POST':
-        form = GradeGoalForm(request.POST, user=request.user)
+        form = GradeGoalForm(data=request.POST, user=request.user)
         if form.is_valid():
             goal = form.save(commit=False)
             goal.user = request.user
@@ -449,7 +449,7 @@ def grade_goal_edit_view(request, goal_id):
     goal = get_object_or_404(GradeGoal, id=goal_id, user=request.user)
 
     if request.method == 'POST':
-        form = GradeGoalForm(request.POST, instance=goal, user=request.user)
+        form = GradeGoalForm(data=request.POST, instance=goal, user=request.user)
         if form.is_valid():
             form.save()
             messages.success(request, f'Obiectivul pentru {goal.subject.nume} a fost actualizat!')

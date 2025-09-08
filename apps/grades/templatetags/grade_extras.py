@@ -24,3 +24,5 @@ def mul(a, b):
         return 0
 
 
+
+

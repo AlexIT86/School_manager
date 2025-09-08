@@ -19,36 +19,42 @@ def add_minutes(value, minutes):
     if value is None:
         return value
 
-    # Acceptă: time, int (ora), string 'HH:MM' sau string numeric
+    # Normalizează valoarea de intrare la un obiect time
     base_time = None
 
-    # int -> interpretăm ca oră întreagă
-    if isinstance(value, int):
+    # 1) Dacă e deja datetime.time
+    if hasattr(value, 'hour') and hasattr(value, 'minute'):
+        base_time = value
+    # 2) Dacă e datetime, extrage time-ul
+    elif hasattr(value, 'time') and callable(getattr(value, 'time')):
         try:
-            base_time = time_cls(value % 24, 0)
+            base_time = value.time()
         except Exception:
-            return value
-
-    # string numeric
-    elif isinstance(value, str) and value.isdigit():
+            base_time = None
+    # 3) Dacă e int/float -> interpretăm ca oră întreagă (HH:00)
+    elif isinstance(value, (int, float)):
         try:
-            hour_int = int(value)
-            base_time = time_cls(hour_int % 24, 0)
+            base_time = time_cls(int(value), 0)
         except Exception:
-            return value
-
-    # string format HH:MM
+            base_time = None
+    # 4) Dacă e string
     elif isinstance(value, str):
-        try:
-            hours, mins = map(int, value.split(':')[:2])
-            base_time = time_cls(hours % 24, mins % 60)
-        except Exception:
-            return value
+        v = value.strip()
+        # format HH:MM
+        if ':' in v:
+            try:
+                hours, mins = map(int, v.split(':')[:2])
+                base_time = time_cls(hours, mins)
+            except Exception:
+                base_time = None
+        # format numeric '8' -> 08:00
+        elif v.isdigit():
+            try:
+                base_time = time_cls(int(v), 0)
+            except Exception:
+                base_time = None
 
-    # datetime.time direct
-    elif hasattr(value, 'hour') and hasattr(value, 'minute'):
-        base_time = time_cls(value.hour, value.minute)
-    else:
+    if base_time is None:
         return value
 
     dummy_date = datetime(2000, 1, 1, base_time.hour, base_time.minute, 0)
@@ -86,3 +92,29 @@ def index(sequence, position):
     except Exception:
         return None
 
+
+@register.filter
+def to_time(value):
+    """Normalizează valori (int/float/str) la un obiect datetime.time pentru folosire în template-uri."""
+    try:
+        # Dacă are atribute hour/minute, presupunem că e time/datetime
+        if hasattr(value, 'hour') and hasattr(value, 'minute'):
+            # datetime.time
+            return value
+        if hasattr(value, 'time') and callable(getattr(value, 'time')):
+            # datetime -> time
+            return value.time()
+        if isinstance(value, (int, float)):
+            from datetime import time as time_cls
+            return time_cls(int(value), 0)
+        if isinstance(value, str):
+            v = value.strip()
+            from datetime import time as time_cls
+            if ':' in v:
+                hours, mins = map(int, v.split(':')[:2])
+                return time_cls(hours, mins)
+            if v.isdigit():
+                return time_cls(int(v), 0)
+    except Exception:
+        return value
+    return value
