@@ -9,6 +9,7 @@ from datetime import date, time, datetime, timedelta
 import json
 
 from .models import ScheduleEntry, ScheduleTemplate, ScheduleTemplateEntry, ScheduleChange
+from apps.homework.models import Homework
 from .forms import ScheduleEntryForm, ScheduleTemplateForm, ScheduleChangeForm, ScheduleImportForm
 from apps.subjects.models import Subject
 from apps.core.models import Notification
@@ -34,6 +35,17 @@ def schedule_calendar_view(request):
             'day_num': day_num,
             'entries': list(entries)
         }
+
+    # Atașează temele nefinalizate per materie pentru a fi afișate în orar
+    pending_map = {}
+    pending_homework = Homework.objects.filter(user=user, finalizata=False).select_related('subject')
+    for hw in pending_homework:
+        pending_map.setdefault(hw.subject_id, []).append(hw)
+
+    for day in schedule_data.values():
+        for entry in day['entries']:
+            # listă de Homework atașată fiecărei intrări din orar
+            entry.pending_homework = pending_map.get(entry.subject_id, [])
 
     # Materii distincte pentru filtre (evită duplicatele)
     # Subiecte unice folosite în orar (bazat pe subject_id)
@@ -124,6 +136,10 @@ def schedule_calendar_view(request):
             user=user,
             zi_saptamana=today.isoweekday()
         ).order_by('numar_ora').select_related('subject'))
+
+        # atașează și pentru lista de azi
+        for entry in today_classes:
+            entry.pending_homework = pending_map.get(entry.subject_id, [])
 
     context = {
         'schedule_data': schedule_data,
