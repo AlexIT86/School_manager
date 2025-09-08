@@ -24,12 +24,15 @@ class Command(BaseCommand):
             self.stderr.write(self.style.ERROR('send_email indisponibil (dependință lipsă)'))
             return
 
-        api_key = getattr(settings, 'SENDGRID_API_KEY', '')
-        if not api_key:
-            self.stderr.write(self.style.ERROR('Lipsește SENDGRID_API_KEY în environment'))
-            return
-
         try:
+            use_smtp = bool(getattr(settings, 'EMAIL_HOST_PASSWORD', ''))
+            use_api = bool(getattr(settings, 'SENDGRID_API_KEY', ''))
+            path = 'SMTP' if use_smtp else ('SendGrid API' if use_api else 'N/A')
+            if path == 'N/A':
+                self.stderr.write(self.style.ERROR('Config lipsă: setează EMAIL_HOST_PASSWORD pentru SMTP sau SENDGRID_API_KEY pentru API'))
+                return
+
+            self.stdout.write(self.style.NOTICE(f'Încerc trimitere prin: {path}'))
             send_email([to_addr], subject, html)
             self.stdout.write(self.style.SUCCESS(f'Trimis email de test către {to_addr}'))
         except Exception as e:
