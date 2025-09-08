@@ -72,6 +72,30 @@ def profile_setup_view(request):
         if form.is_valid():
             form.save()
             messages.success(request, 'Profilul a fost configurat cu succes!')
+            # Email părinte la configurare profil
+            if send_email:
+                try:
+                    refreshed = request.user.student_profile
+                    parent_email = getattr(refreshed, 'email_parinte', '')
+                    if parent_email:
+                        send_email(
+                            to_emails=[parent_email],
+                            subject='Profil elev configurat',
+                            html_content=f"""
+                            <p>Bună,</p>
+                            <p>Profilul elevului {request.user.get_full_name() or request.user.username} a fost configurat în School Manager.</p>
+                            <ul>
+                              <li>Clasa: {refreshed.clasa or '-'}</li>
+                              <li>Școala: {refreshed.scoala or '-'}</li>
+                              <li>Ora de început: {refreshed.ore_start}</li>
+                              <li>Reminder teme: {'activ' if refreshed.reminder_teme else 'inactiv'}</li>
+                              <li>Reminder note: {'activ' if refreshed.reminder_note else 'inactiv'}</li>
+                            </ul>
+                            <p>Vă mulțumim!</p>
+                            """
+                        )
+                except Exception:
+                    pass
             return redirect('core:dashboard')
     else:
         form = StudentProfileForm(instance=profile)
@@ -210,6 +234,30 @@ def profile_view(request):
         if form.is_valid():
             form.save()
             messages.success(request, 'Profilul a fost actualizat cu succes!')
+            # Email părinte la actualizare profil
+            if send_email:
+                try:
+                    refreshed = request.user.student_profile
+                    parent_email = getattr(refreshed, 'email_parinte', '')
+                    if parent_email:
+                        send_email(
+                            to_emails=[parent_email],
+                            subject='Profil elev actualizat',
+                            html_content=f"""
+                            <p>Bună,</p>
+                            <p>Profilul elevului {request.user.get_full_name() or request.user.username} a fost actualizat.</p>
+                            <ul>
+                              <li>Clasa: {refreshed.clasa or '-'}</li>
+                              <li>Școala: {refreshed.scoala or '-'}</li>
+                              <li>Ora de început: {refreshed.ore_start}</li>
+                              <li>Reminder teme: {'activ' if refreshed.reminder_teme else 'inactiv'}</li>
+                              <li>Reminder note: {'activ' if refreshed.reminder_note else 'inactiv'}</li>
+                            </ul>
+                            <p>Vă mulțumim!</p>
+                            """
+                        )
+                except Exception:
+                    pass
             return redirect('core:profile')
     else:
         form = StudentProfileForm(instance=profile)

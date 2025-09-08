@@ -15,6 +15,12 @@ from .models import Homework, HomeworkFile, HomeworkSession, HomeworkReminder
 from .forms import HomeworkForm, HomeworkFileForm, HomeworkSessionForm, HomeworkFilterForm
 from apps.subjects.models import Subject
 from apps.core.models import Notification
+from django.conf import settings
+
+try:
+    from apps.core.email_utils import send_email
+except Exception:
+    send_email = None
 
 
 @login_required
@@ -184,6 +190,28 @@ def homework_create_view(request):
                 pass
 
             messages.success(request, f'Tema "{homework.titlu}" a fost adăugată cu succes!')
+
+            # Email părinte pentru teme noi (dacă e activat în profil)
+            try:
+                profile = request.user.student_profile
+                parent_email = getattr(profile, 'email_parinte', '')
+                if send_email and profile.reminder_teme and parent_email:
+                    send_email(
+                        to_emails=[parent_email],
+                        subject=f'Temă nouă la {homework.subject.nume}',
+                        html_content=f"""
+                        <p>Bună,</p>
+                        <p>A fost adăugată o temă nouă:</p>
+                        <ul>
+                          <li>Materie: {homework.subject.nume}</li>
+                          <li>Titlu: {homework.titlu}</li>
+                          <li>Termen: {homework.deadline}</li>
+                          <li>Prioritate: {homework.get_prioritate_display() if hasattr(homework, 'get_prioritate_display') else '-'}</li>
+                        </ul>
+                        """
+                    )
+            except Exception:
+                pass
             return redirect('homework:detail', homework_id=homework.id)
     else:
         form = HomeworkForm(user=request.user)
@@ -278,6 +306,28 @@ def homework_complete_toggle(request, homework_id):
                 titlu='Temă finalizată!',
                 mesaj=f'Ai finalizat tema "{homework.titlu}" la {homework.subject.nume}.'
             )
+
+            # Email părinte pentru temă finalizată (dacă e activat în profil)
+            try:
+                profile = request.user.student_profile
+                parent_email = getattr(profile, 'email_parinte', '')
+                if send_email and profile.reminder_teme and parent_email:
+                    send_email(
+                        to_emails=[parent_email],
+                        subject=f'Temă finalizată: {homework.subject.nume}',
+                        html_content=f"""
+                        <p>Bună,</p>
+                        <p>Tema a fost marcată ca finalizată:</p>
+                        <ul>
+                          <li>Materie: {homework.subject.nume}</li>
+                          <li>Titlu: {homework.titlu}</li>
+                          <li>Termen: {homework.deadline}</li>
+                          <li>Progres: 100%</li>
+                        </ul>
+                        """
+                    )
+            except Exception:
+                pass
 
         homework.save()
 

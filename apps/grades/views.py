@@ -12,6 +12,12 @@ from .models import Grade, Semester, SubjectGradeStats, GradeGoal
 from .forms import GradeForm, SemesterForm, GradeGoalForm, GradeFilterForm
 from apps.subjects.models import Subject
 from apps.core.models import Notification
+from django.conf import settings
+
+try:
+    from apps.core.email_utils import send_email
+except Exception:
+    send_email = None
 
 
 @login_required
@@ -245,6 +251,28 @@ def grade_create_view(request):
 
             type_display = grade.get_tip_display()
             messages.success(request, f'{type_display} la {grade.subject.nume} a fost adăugată!')
+
+            # Email părinte pentru note noi (dacă e activat in profil)
+            try:
+                profile = request.user.student_profile
+                parent_email = getattr(profile, 'email_parinte', '')
+                if send_email and profile.reminder_note and parent_email and grade.tip == 'nota':
+                    send_email(
+                        to_emails=[parent_email],
+                        subject=f'Notă nouă la {grade.subject.nume}',
+                        html_content=f"""
+                        <p>Bună,</p>
+                        <p>A fost adăugată o notă nouă pentru elev:</p>
+                        <ul>
+                          <li>Materie: {grade.subject.nume}</li>
+                          <li>Nota: {grade.valoare}</li>
+                          <li>Data: {grade.data}</li>
+                          <li>Tip evaluare: {grade.get_tip_evaluare_display() if hasattr(grade, 'get_tip_evaluare_display') else '-'}</li>
+                        </ul>
+                        """
+                    )
+            except Exception:
+                pass
 
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return JsonResponse({
