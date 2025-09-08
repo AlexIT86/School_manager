@@ -35,6 +35,18 @@ def schedule_calendar_view(request):
             'entries': list(entries)
         }
 
+    # Materii distincte pentru filtre (evită duplicatele)
+    distinct_subject_rows = (
+        ScheduleEntry.objects.filter(user=user)
+        .select_related('subject')
+        .values('subject__nume', 'subject__culoare')
+        .distinct()
+    )
+    subject_filters = [
+        {'name': row['subject__nume'], 'color': row['subject__culoare']}
+        for row in distinct_subject_rows
+    ]
+
     # Calculează orele disponibile și parametrii în funcție de profil
     max_hours = 8
     start_base = time(8, 0)
@@ -117,6 +129,7 @@ def schedule_calendar_view(request):
         'weekdays': weekdays,
         'current_hour': current_hour,
         'today_classes': today_classes,
+        'subject_filters': subject_filters,
         # Parametri pentru UI/JS
         'start_hour': start_base.hour,
         'start_minute': start_base.minute,

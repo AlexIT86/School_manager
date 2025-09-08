@@ -82,14 +82,12 @@
                         <div class="subject-chip active" data-subject="all">
                             <i class="fas fa-check-circle me-1"></i>Toate
                         </div>
-                        {% for item in schedule_data.values %}
-                            {% for entry in item.entries %}
-                                <div class="subject-chip" 
-                                     data-subject="{{ entry.subject.nume|lower }}"
-                                     style="--subject-color: {{ entry.subject.culoare }};">
-                                    {{ entry.subject.nume }}
-                                </div>
-                            {% endfor %}
+                        {% for s in subject_filters %}
+                        <div class="subject-chip" 
+                             data-subject="{{ s.name|lower }}"
+                             style="--subject-color: {{ s.color }};">
+                            {{ s.name }}
+                        </div>
                         {% endfor %}
                     </div>
                 </div>
