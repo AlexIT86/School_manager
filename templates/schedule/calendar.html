@@ -404,6 +404,40 @@ document.addEventListener('DOMContentLoaded', function() {
     if (typeof ScheduleCalendar !== 'undefined') {
         ScheduleCalendar.init();
     }
+
+    // Make pending-homework popovers sticky while hovering
+    const badges = document.querySelectorAll('.homework-pending .badge[data-bs-toggle="popover"]');
+    badges.forEach(badge => {
+        // Re-init with manual trigger
+        const existing = bootstrap.Popover.getInstance(badge);
+        if (existing) existing.dispose();
+        const pop = new bootstrap.Popover(badge, { trigger: 'manual', html: true, container: 'body', placement: 'top' });
+        let hideTimer;
+        const show = () => {
+            clearTimeout(hideTimer);
+            pop.show();
+            const tip = pop.getTipElement ? pop.getTipElement() : document.querySelector('.popover.show');
+            if (tip && !tip._hoverBound) {
+                tip._hoverBound = true;
+                tip.addEventListener('mouseenter', () => clearTimeout(hideTimer));
+                tip.addEventListener('mouseleave', () => { hideTimer = setTimeout(() => pop.hide(), 200); });
+            }
+        };
+        const scheduleHide = () => { hideTimer = setTimeout(() => pop.hide(), 200); };
+        badge.addEventListener('mouseenter', show);
+        badge.addEventListener('mouseleave', scheduleHide);
+        badge.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const tip = pop.getTipElement ? pop.getTipElement() : null;
+            const isShown = tip && tip.classList.contains('show');
+            if (isShown) {
+                pop.hide();
+            } else {
+                show();
+            }
+        });
+    });
 });
 
 // Update current time display
