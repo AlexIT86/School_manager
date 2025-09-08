@@ -90,9 +90,15 @@ def grades_overview_view(request):
     ).select_related('subject')
 
     # Statistici generale
+    avg_val = Grade.objects.filter(user=user, tip='nota').aggregate(avg=Avg('valoare'))['avg'] or 0
+    try:
+        avg_val = round(float(avg_val), 2)
+    except Exception:
+        avg_val = 0
+
     general_stats = {
         'total_grades': Grade.objects.filter(user=user, tip='nota').count(),
-        'avg_grade': Grade.objects.filter(user=user, tip='nota').aggregate(avg=Avg('valoare'))['avg'] or 0,
+        'avg_grade': avg_val,
         'total_absences': Grade.objects.filter(user=user, tip__in=['absenta', 'absenta_motivata']).count(),
         'motivated_absences': Grade.objects.filter(user=user, tip='absenta_motivata').count(),
         'grades_this_month': Grade.objects.filter(
