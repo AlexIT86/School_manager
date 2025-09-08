@@ -53,8 +53,8 @@ def grades_overview_view(request):
             subject=subject,
             semester=active_semester
         )
-        if created or not stats.updated_at or stats.updated_at.date() < date.today():
-            stats.calculeaza_statistici()
+        # Recalculează mereu pentru a reflecta cele mai noi note
+        stats.calculeaza_statistici()
 
         subject_stats.append(stats)
 
@@ -164,10 +164,26 @@ def grade_create_view(request):
 
             # Actualizează statisticile pentru materie
             if grade.tip == 'nota':
+                # Determină obiectul Semester corespunzător numărului din notă
+                semester_obj = Semester.objects.filter(user=request.user, activ=True, numar=grade.semestru).first()
+                if not semester_obj:
+                    semester_obj = Semester.objects.filter(user=request.user, numar=grade.semestru).order_by('-an_scolar').first()
+                if not semester_obj:
+                    # Creează un semestru minim dacă lipsește
+                    current_year = date.today().year
+                    semester_obj = Semester.objects.create(
+                        user=request.user,
+                        numar=grade.semestru,
+                        an_scolar=f"{current_year}-{current_year + 1}",
+                        data_inceput=date(current_year, 9, 15) if grade.semestru == 1 else date(current_year, 2, 1),
+                        data_sfarsit=date(current_year + (1 if grade.semestru == 1 else 0), 1 if grade.semestru == 1 else 6, 31 if grade.semestru == 1 else 15),
+                        activ=False
+                    )
+
                 stats, created = SubjectGradeStats.objects.get_or_create(
                     user=request.user,
                     subject=grade.subject,
-                    semester_id=grade.semestru
+                    semester=semester_obj
                 )
                 stats.calculeaza_statistici()
 
@@ -272,15 +288,19 @@ def grade_edit_view(request, grade_id):
 
             # Recalculează statisticile
             if grade.tip == 'nota':
-                try:
-                    stats = SubjectGradeStats.objects.get(
-                        user=request.user,
-                        subject=grade.subject,
-                        semester_id=grade.semestru
-                    )
-                    stats.calculeaza_statistici()
-                except SubjectGradeStats.DoesNotExist:
-                    pass
+                semester_obj = Semester.objects.filter(user=request.user, activ=True, numar=grade.semestru).first()
+                if not semester_obj:
+                    semester_obj = Semester.objects.filter(user=request.user, numar=grade.semestru).order_by('-an_scolar').first()
+                if semester_obj:
+                    try:
+                        stats = SubjectGradeStats.objects.get(
+                            user=request.user,
+                            subject=grade.subject,
+                            semester=semester_obj
+                        )
+                        stats.calculeaza_statistici()
+                    except SubjectGradeStats.DoesNotExist:
+                        pass
 
             messages.success(request, f'{grade.get_tip_display()} a fost actualizată!')
             return redirect('grades:detail', grade_id=grade.id)
@@ -309,15 +329,19 @@ def grade_delete_view(request, grade_id):
         grade.delete()
 
         # Recalculează statisticile
-        try:
-            stats = SubjectGradeStats.objects.get(
-                user=request.user,
-                subject=subject,
-                semester_id=semestru
-            )
-            stats.calculeaza_statistici()
-        except SubjectGradeStats.DoesNotExist:
-            pass
+        semester_obj = Semester.objects.filter(user=request.user, activ=True, numar=semestru).first()
+        if not semester_obj:
+            semester_obj = Semester.objects.filter(user=request.user, numar=semestru).order_by('-an_scolar').first()
+        if semester_obj:
+            try:
+                stats = SubjectGradeStats.objects.get(
+                    user=request.user,
+                    subject=subject,
+                    semester=semester_obj
+                )
+                stats.calculeaza_statistici()
+            except SubjectGradeStats.DoesNotExist:
+                pass
 
         messages.success(request, f'{grade_type} a fost ștearsă!')
         return redirect('grades:overview')
