@@ -5,6 +5,7 @@ from django.http import JsonResponse
 from django.db.models import Q, Count, Avg, Max, Min
 from django.core.paginator import Paginator
 from datetime import date, timedelta
+import calendar
 import json
 
 from .models import Grade, Semester, SubjectGradeStats, GradeGoal
@@ -630,13 +631,22 @@ def grade_calendar_view(request):
         data__range=[first_day, last_day]
     ).select_related('subject')
 
-    # Organizează pe zile
-    calendar_data = {}
+    # Organizează pe zile și construiește săptămânile pentru randare
+    per_day = {}
     for grade in grades_in_month:
-        day = grade.data.day
-        if day not in calendar_data:
-            calendar_data[day] = []
-        calendar_data[day].append(grade)
+        d = grade.data.day
+        per_day.setdefault(d, []).append(grade)
+
+    cal = calendar.Calendar(firstweekday=0)  # 0=Luni
+    weeks = []
+    for week in cal.monthdayscalendar(year, month):
+        row = []
+        for d in week:
+            if d == 0:
+                row.append({'day': None, 'grades': []})
+            else:
+                row.append({'day': d, 'grades': per_day.get(d, [])})
+        weeks.append(row)
 
     # Navigare
     if month == 1:
@@ -650,7 +660,7 @@ def grade_calendar_view(request):
         next_month, next_year = month + 1, year
 
     context = {
-        'calendar_data': calendar_data,
+        'calendar_weeks': weeks,
         'current_month': month,
         'current_year': year,
         'month_name': [

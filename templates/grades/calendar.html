@@ -27,35 +27,29 @@
         </tr>
       </thead>
       <tbody>
-        {% with day=1 %}
-        {% for _ in "12345" %}
+        {% for week in calendar_weeks %}
         <tr>
-          {% for wd in "1234567" %}
-            {% if forloop.parentloop.first and forloop.counter0 < first_weekday %}
+          {% for cell in week %}
+            {% if not cell.day %}
               <td class="bg-light"></td>
-            {% elif day <= days_in_month %}
+            {% else %}
               <td style="min-width: 200px;">
-                <div class="d-flex justify-content-between"><strong>{{ day }}</strong></div>
+                <div class="d-flex justify-content-between"><strong>{{ cell.day }}</strong></div>
                 <div class="mt-2">
-                  {% for g in calendar_data|get_item:day %}
+                  {% for g in cell.grades %}
                   <div class="small mb-1 p-1 rounded"
                        style="background: rgba(0,0,0,0.03); border-left: 3px solid {% if g.tip == 'nota' %}{{ g.culoare_afisare }}{% else %}#dc3545{% endif %}; padding-left: 6px;">
                     <a class="text-decoration-none" href="{% url 'grades:detail' g.id %}">
-                      {{ g.subject.nume }} —
-                      {% if g.tip == 'nota' %}<strong style="color: {{ g.culoare_afisare }};">{{ g.valoare }}</strong>{% else %}{{ g.get_tip_display }}{% endif %}
+                      {{ g.subject.nume }} — {% if g.tip == 'nota' %}<strong style="color: {{ g.culoare_afisare }};">{{ g.valoare }}</strong>{% else %}{{ g.get_tip_display }}{% endif %}
                     </a>
                   </div>
                   {% endfor %}
                 </div>
               </td>
-              {% with day=day|add:1 %}{% endwith %}
-            {% else %}
-              <td class="bg-light"></td>
             {% endif %}
           {% endfor %}
         </tr>
         {% endfor %}
-        {% endwith %}
       </tbody>
     </table>
   </div>
