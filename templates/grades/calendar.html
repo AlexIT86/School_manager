@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% load schedule_extras %}
+
+{% block title %}Calendar Note{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="mb-0">Calendar note — {{ month_name }} {{ current_year }}</h5>
+    <div>
+      <a class="btn btn-outline-secondary btn-sm" href="?month={{ prev_month }}&year={{ prev_year }}"><i class="fas fa-chevron-left"></i></a>
+      <a class="btn btn-outline-secondary btn-sm" href="?month={{ next_month }}&year={{ next_year }}"><i class="fas fa-chevron-right"></i></a>
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-bordered align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>Luni</th>
+          <th>Marți</th>
+          <th>Miercuri</th>
+          <th>Joi</th>
+          <th>Vineri</th>
+          <th>Sâmbătă</th>
+          <th>Duminică</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% with day=1 %}
+        {% for _ in "12345" %}
+        <tr>
+          {% for wd in "1234567" %}
+            {% if forloop.parentloop.first and forloop.counter0 < first_weekday %}
+              <td class="bg-light"></td>
+            {% elif day <= days_in_month %}
+              <td style="min-width: 200px;">
+                <div class="d-flex justify-content-between"><strong>{{ day }}</strong></div>
+                <div class="mt-2">
+                  {% for g in calendar_data|get_item:day %}
+                  <div class="small mb-1 p-1 rounded"
+                       style="background: rgba(0,0,0,0.03); border-left: 3px solid {% if g.tip == 'nota' %}{{ g.culoare_afisare }}{% else %}#dc3545{% endif %}; padding-left: 6px;">
+                    <a class="text-decoration-none" href="{% url 'grades:detail' g.id %}">
+                      {{ g.subject.nume }} —
+                      {% if g.tip == 'nota' %}<strong style="color: {{ g.culoare_afisare }};">{{ g.valoare }}</strong>{% else %}{{ g.get_tip_display }}{% endif %}
+                    </a>
+                  </div>
+                  {% endfor %}
+                </div>
+              </td>
+              {% with day=day|add:1 %}{% endwith %}
+            {% else %}
+              <td class="bg-light"></td>
+            {% endif %}
+          {% endfor %}
+        </tr>
+        {% endfor %}
+        {% endwith %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+
