@@ -44,7 +44,9 @@
             <div class="col-6 col-md-4 col-lg-3">
               <div class="border rounded p-2 text-center">
                 {% if f.tip == 'imagine' %}
-                <img src="{{ f.fisier.url }}" class="img-fluid rounded" alt="{{ f.nume }}">
+                <a href="#" class="hw-thumb" data-src="{{ f.fisier.url }}" data-index="{{ forloop.counter0 }}" title="{{ f.nume }}">
+                  <img src="{{ f.fisier.url }}" class="img-fluid rounded" alt="{{ f.nume }}">
+                </a>
                 {% else %}
                 <i class="fas fa-file fa-3x text-muted"></i>
                 <div class="small mt-2">{{ f.nume }}</div>
@@ -92,6 +94,81 @@
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.lightbox-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; z-index: 2000; }
+.lightbox-backdrop.active { display: flex; }
+.lightbox-content { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.lightbox-img { max-width: 100%; max-height: 100%; transform-origin: center center; cursor: grab; }
+.lightbox-controls { position: absolute; left: 0; right: 0; bottom: 20px; display: flex; gap: 10px; justify-content: center; }
+.lightbox-close { position: absolute; top: 15px; right: 15px; }
+.lightbox-nav-prev, .lightbox-nav-next { position: absolute; top: 50%; transform: translateY(-50%); }
+.lightbox-nav-prev { left: 10px; }
+.lightbox-nav-next { right: 10px; }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const thumbs = Array.from(document.querySelectorAll('.hw-thumb'));
+  if (!thumbs.length) return;
+  const images = thumbs.map(t => t.dataset.src);
+
+  const backdrop = document.createElement('div');
+  backdrop.className = 'lightbox-backdrop';
+  backdrop.innerHTML = `
+    <div class="lightbox-content">
+      <img class="lightbox-img" src="" alt="preview">
+      <div class="lightbox-controls">
+        <button class="btn btn-light btn-sm" data-zoom="out" title="Zoom -"><i class="fas fa-search-minus"></i></button>
+        <button class="btn btn-light btn-sm" data-zoom="in" title="Zoom +"><i class="fas fa-search-plus"></i></button>
+        <button class="btn btn-light btn-sm" data-reset title="Reset"><i class="fas fa-compress"></i></button>
+      </div>
+      <button class="btn btn-light lightbox-close" title="Închide"><i class="fas fa-times"></i></button>
+      <button class="btn btn-light lightbox-nav-prev" title="Înapoi"><i class="fas fa-chevron-left"></i></button>
+      <button class="btn btn-light lightbox-nav-next" title="Înainte"><i class="fas fa-chevron-right"></i></button>
+    </div>
+  `;
+  document.body.appendChild(backdrop);
+
+  const imgEl = backdrop.querySelector('.lightbox-img');
+  const closeBtn = backdrop.querySelector('.lightbox-close');
+  const prevBtn = backdrop.querySelector('.lightbox-nav-prev');
+  const nextBtn = backdrop.querySelector('.lightbox-nav-next');
+  const zoomInBtn = backdrop.querySelector('[data-zoom="in"]');
+  const zoomOutBtn = backdrop.querySelector('[data-zoom="out"]');
+  const resetBtn = backdrop.querySelector('[data-reset]');
+
+  let current = 0; let scale = 1, minScale = 1, maxScale = 5; let pos = {x:0,y:0}; let dragging=false, last={x:0,y:0};
+
+  function open(i){ current=i; load(); backdrop.classList.add('active'); document.body.style.overflow='hidden'; }
+  function close(){ backdrop.classList.remove('active'); document.body.style.overflow=''; reset(); }
+  function load(){ imgEl.src = images[current]; reset(); }
+  function reset(){ scale=1; pos={x:0,y:0}; apply(); }
+  function apply(){ imgEl.style.transform = `translate(${pos.x}px, ${pos.y}px) scale(${scale})`; }
+  function zoom(d){ scale=Math.max(minScale, Math.min(maxScale, scale+d)); apply(); }
+  function next(){ current=(current+1)%images.length; load(); }
+  function prev(){ current=(current-1+images.length)%images.length; load(); }
+
+  thumbs.forEach((t,idx)=> t.addEventListener('click', e=>{ e.preventDefault(); open(idx); }));
+  closeBtn.addEventListener('click', close); backdrop.addEventListener('click', e=>{ if(e.target===backdrop) close(); });
+  nextBtn.addEventListener('click', next); prevBtn.addEventListener('click', prev);
+  zoomInBtn.addEventListener('click', ()=>zoom(0.5)); zoomOutBtn.addEventListener('click', ()=>zoom(-0.5)); resetBtn.addEventListener('click', reset);
+
+  document.addEventListener('keydown', e=>{ if(!backdrop.classList.contains('active')) return; if(e.key==='Escape') close(); if(e.key==='ArrowRight') next(); if(e.key==='ArrowLeft') prev(); if(e.key==='+') zoom(0.5); if(e.key==='-') zoom(-0.5); });
+  imgEl.addEventListener('wheel', e=>{ e.preventDefault(); zoom(e.deltaY<0?0.25:-0.25); }, {passive:false});
+
+  function pd(e){ dragging=true; imgEl.style.cursor='grabbing'; last={x:(e.clientX||e.touches?.[0].clientX), y:(e.clientY||e.touches?.[0].clientY)}; }
+  function pm(e){ if(!dragging||scale===1) return; const cx=(e.clientX||e.touches?.[0].clientX), cy=(e.clientY||e.touches?.[0].clientY); pos.x+=cx-last.x; pos.y+=cy-last.y; last={x:cx,y:cy}; apply(); }
+  function pu(){ dragging=false; imgEl.style.cursor='grab'; }
+
+  imgEl.addEventListener('mousedown', pd); imgEl.addEventListener('mousemove', pm); window.addEventListener('mouseup', pu);
+  imgEl.addEventListener('touchstart', pd, {passive:true}); imgEl.addEventListener('touchmove', pm, {passive:false}); imgEl.addEventListener('touchend', pu);
+});
+</script>
 {% endblock %}
 
  
