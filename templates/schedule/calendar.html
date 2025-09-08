@@ -176,6 +176,13 @@
                             {% if entry.subject.nume_profesor %}
                             <div class="teacher-info">{{ entry.subject.nume_profesor }}</div>
                             {% endif %}
+                            {% if entry.subject.media_note %}
+                            <div class="mt-1">
+                                <span class="badge bg-light text-dark" title="Media generală">
+                                    <i class="fas fa-star text-warning me-1"></i>{{ entry.subject.media_note|floatformat:2 }}
+                                </span>
+                            </div>
+                            {% endif %}
                             {% if entry.pending_homework %}
                             <div class="homework-pending mt-1">
                                 <i class="fas fa-tasks me-1"></i>
