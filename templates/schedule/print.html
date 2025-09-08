@@ -6,7 +6,9 @@
 {% block extra_css %}
 <style>
   @page { size: A4 landscape; margin: 12mm; }
+  html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   /* Layout curat pentru print */
+  .container-print { max-width: 100% !important; padding: 0 !important; }
   .print-header {
     display: flex;
     justify-content: space-between;
@@ -49,11 +51,11 @@
     width: 100%;
     border-collapse: collapse;
     table-layout: fixed;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
   }
   .compact-table th, .compact-table td {
     border: 1px solid #dee2e6;
-    padding: 0.35rem 0.45rem;
+    padding: 0.3rem 0.4rem;
     vertical-align: top;
     word-wrap: break-word;
   }
@@ -62,8 +64,8 @@
     text-align: center;
     font-weight: 700;
   }
-  .col-ora { width: 70px; }
-  .col-zi { width: calc((100% - 70px) / 5); }
+  .col-ora { width: 60px; }
+  .col-zi { width: auto; }
   .entry-box { margin-bottom: 0.25rem; border-left: 4px solid #aaa; padding-left: 6px; }
   .entry-title { font-weight: 600; }
   .entry-sub { color: #6c757d; font-size: 0.8rem; }
@@ -73,8 +75,9 @@
   @media print {
     .no-print { display: none !important; }
     .navbar, .footer, .schedule-filters, .calendar-header { display: none !important; }
-    body { background: white !important; }
-    .container-print { width: 100%; margin: 0; }
+    body { background: white !important; margin: 0; }
+    .container-print { width: 100%; margin: 0; max-width: 100% !important; padding: 0 !important; }
+    .compact-table { font-size: 0.8rem; }
   }
 </style>
 {% endblock %}
@@ -95,10 +98,14 @@
       <button type="button" class="btn btn-outline-secondary no-print" onclick="window.print()">
         <i class="fas fa-print me-1"></i>Printează
       </button>
+      <button type="button" id="btnExportPdf" class="btn btn-primary no-print ms-2">
+        <i class="fas fa-file-pdf me-1"></i>Exportă PDF
+      </button>
     </div>
   </div>
 
   <!-- Tabel compact: rânduri = ore (1..max_hours), coloane = zile (Luni..Vineri) -->
+  <div id="printArea">
   <table class="compact-table">
     <thead>
       <tr>
@@ -136,7 +143,25 @@
       {% endfor %}
     </tbody>
   </table>
+  </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-YcsIP7LQ2nQnB5yM8b1rqJxw0g4RqQ0n4mQd4Vh6nXR3ZrT8mJc6x2x2rYkGxsHqVnH0G8v3No89c8E3hGfP4g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script>
+document.getElementById('btnExportPdf')?.addEventListener('click', function() {
+  const element = document.getElementById('printArea');
+  const opt = {
+    margin: [5, 8, 5, 8],
+    filename: 'orar-scolar.pdf',
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+  };
+  html2pdf().set(opt).from(element).save();
+});
+</script>
 {% endblock %}
 
 
