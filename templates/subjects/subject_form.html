@@ -26,35 +26,65 @@
                             <div class="col-md-6">
                                 {{ form.nume.label_tag }}
                                 {{ form.nume }}
+                                {% for error in form.nume.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
                             </div>
                             <div class="col-md-6">
                                 {{ form.nume_profesor.label_tag }}
                                 {{ form.nume_profesor }}
+                                {% for error in form.nume_profesor.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
                             </div>
 
                             <div class="col-md-4">
                                 {{ form.sala.label_tag }}
                                 {{ form.sala }}
+                                {% for error in form.sala.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
                             </div>
                             <div class="col-md-4">
                                 {{ form.culoare.label_tag }}
                                 {{ form.culoare }}
+                                {% for error in form.culoare.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
                             </div>
                             <div class="col-md-4 d-flex align-items-end">
                                 <div class="form-check">
                                     {{ form.activa }}
                                     <label class="form-check-label" for="id_activa">Activă</label>
+                                    {% for error in form.activa.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
                                 </div>
                             </div>
 
                             <div class="col-12">
                                 {{ form.manual.label_tag }}
                                 {{ form.manual }}
+                                {% for error in form.manual.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
                             </div>
 
                             <div class="col-12">
                                 {{ form.descriere.label_tag }}
                                 {{ form.descriere }}
+                                {% for error in form.descriere.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="col-md-4">
+                                {{ form.rating.label_tag }}
+                                {{ form.rating }}
+                                <small class="text-muted">Între 1 și 5</small>
+                                {% for error in form.rating.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
                             </div>
                         </div>
 
