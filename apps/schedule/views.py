@@ -261,6 +261,10 @@ def schedule_entry_create_view(request):
                         'entry_html': render_schedule_entry_html(entry)
                     })
 
+                # Preserve view mode in redirect
+                view_mode = request.GET.get('view') or request.POST.get('view')
+                if view_mode == 'month':
+                    return redirect(f"{reverse('schedule:calendar')}?view=month")
                 return redirect('schedule:calendar')
             except ValidationError as e:
                 if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -314,6 +318,9 @@ def schedule_entry_edit_view(request, entry_id):
                         'entry_html': render_schedule_entry_html(entry)
                     })
 
+                view_mode = request.GET.get('view') or request.POST.get('view')
+                if view_mode == 'month':
+                    return redirect(f"{reverse('schedule:calendar')}?view=month")
                 return redirect('schedule:calendar')
             except ValidationError as e:
                 form.add_error(None, e.message)

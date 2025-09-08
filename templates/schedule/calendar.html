@@ -557,7 +557,10 @@ function editScheduleEntry(entryId) {
 
 function deleteScheduleEntry(entryId) {
     if (confirm('Sigur vrei să ștergi această oră din orar?')) {
-        fetch(`/orar/entry/${entryId}/delete/`, {
+        const delUrl = new URL(`/orar/entry/${entryId}/delete/`, window.location.origin);
+        const view = new URL(window.location).searchParams.get('view');
+        if (view) delUrl.searchParams.set('view', view);
+        fetch(delUrl.toString(), {
             method: 'POST',
             headers: {
                 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
@@ -592,7 +595,12 @@ document.getElementById('addEntryForm').addEventListener('submit', function(e) {
     formData.append('note', document.getElementById('entryNotes').value);
     formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
     
-    fetch('/orar/entry/create/', {
+    const url = new URL('/orar/entry/create/', window.location.origin);
+    const currentView = new URL(window.location).searchParams.get('view');
+    if (currentView) {
+        url.searchParams.set('view', currentView);
+    }
+    fetch(url.toString(), {
         method: 'POST',
         body: formData,
         headers: {
