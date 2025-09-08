@@ -155,7 +155,7 @@
             {% for day_name, day_data in schedule_data.items %}
             <div class="hour-cell {% if day_data.day_num == week_info.current_day and hour == current_hour %}current-hour{% endif %}"
                  data-day="{{ day_data.day_num }}" 
-                 data-hour="{{ hour|add:7 }}"
+                 data-hour="{{ hour }}"
                  data-hour-number="{{ hour }}"
                  onclick="addScheduleEntry({{ day_data.day_num }}, {{ hour }})">
                 
@@ -309,9 +309,9 @@
                             <label class="form-label">Ora</label>
                             <select class="form-control" id="entryHour" required>
                                 {% for hour in hour_slots %}
-                                <option value="{{ hour }}">
-                                    Ora {{ hour }} ({{ hour|add:7|time:"H:i" }}-{{ hour|add:7|add_minutes:50|time:"H:i" }})
-                                </option>
+                                {% with label=time_labels|index:forloop.counter0 %}
+                                <option value="{{ hour }}">Ora {{ hour }} ({{ label.start|time:"H:i" }}-{{ label.end|time:"H:i" }})</option>
+                                {% endwith %}
                                 {% endfor %}
                             </select>
                         </div>

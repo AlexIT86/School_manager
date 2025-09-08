@@ -35,25 +35,34 @@ def schedule_calendar_view(request):
             'entries': list(entries)
         }
 
-    # Calculează orele disponibile (1-8 de obicei)
+    # Calculează orele disponibile și parametrii în funcție de profil
     max_hours = 8
+    start_base = time(8, 0)
+    class_duration = 50
+    break_duration = 10
     try:
-        if hasattr(user, 'student_profile') and user.student_profile and user.student_profile.nr_ore_pe_zi:
-            max_hours = user.student_profile.nr_ore_pe_zi
+        if hasattr(user, 'student_profile') and user.student_profile:
+            if getattr(user.student_profile, 'nr_ore_pe_zi', None):
+                max_hours = user.student_profile.nr_ore_pe_zi
+            if getattr(user.student_profile, 'ore_start', None):
+                start_base = user.student_profile.ore_start
+            if getattr(user.student_profile, 'durata_ora', None):
+                class_duration = int(user.student_profile.durata_ora or 50)
+            if getattr(user.student_profile, 'durata_pauza', None):
+                break_duration = int(user.student_profile.durata_pauza or 10)
     except Exception:
         pass
 
     hour_slots = list(range(1, max_hours + 1))
 
-    # Etichete de timp pentru fiecare oră (plecând de la 08:00, durată 50m)
+    # Etichete de timp pentru fiecare oră pe baza profilului
     time_labels = []
-    start_hour = 8
-    class_duration = 50
-    for idx in hour_slots:
-        start_time = time(start_hour + idx - 1, 0)
-        end_minutes = (start_time.hour * 60 + start_time.minute) + class_duration
-        end_time = time(end_minutes // 60, end_minutes % 60)
-        time_labels.append({'start': start_time, 'end': end_time})
+    day_start_dt = datetime.combine(date.today(), start_base)
+    slot_total = class_duration + break_duration
+    for idx in range(max_hours):
+        slot_start_dt = day_start_dt + timedelta(minutes=idx * slot_total)
+        slot_end_dt = slot_start_dt + timedelta(minutes=class_duration)
+        time_labels.append({'start': slot_start_dt.time(), 'end': slot_end_dt.time()})
 
     # Verifică modificări pentru săptămâna curentă
     today = date.today()
@@ -81,13 +90,15 @@ def schedule_calendar_view(request):
         'busiest_day': max(schedule_data.items(), key=lambda x: len(x[1]['entries']))[0] if schedule_data else None,
     }
 
-    # Ora curentă pentru highlight în UI
+    # Ora curentă pentru highlight în UI (în funcție de profil)
     current_hour = None
     now = datetime.now()
     if 1 <= now.isoweekday() <= 5:
-        # transformă ora curentă în număr oră (1-8) raportat la start 08:00
-        if 8 <= now.hour <= 16:
-            current_hour = max(1, min(max_hours, (now.hour - 7)))
+        day_start = datetime.combine(now.date(), start_base)
+        day_end = day_start + timedelta(minutes=slot_total * max_hours)
+        if day_start <= now <= day_end:
+            minutes_since_start = int((now - day_start).total_seconds() // 60)
+            current_hour = min(max_hours, (minutes_since_start // slot_total) + 1)
 
     # Orele de azi (pentru secțiunea "Orele de astăzi")
     today_classes = []
@@ -106,6 +117,12 @@ def schedule_calendar_view(request):
         'weekdays': weekdays,
         'current_hour': current_hour,
         'today_classes': today_classes,
+        # Parametri pentru UI/JS
+        'start_hour': start_base.hour,
+        'start_minute': start_base.minute,
+        'duration_min': class_duration,
+        'break_min': break_duration,
+        'max_hours': max_hours,
     }
 
     return render(request, 'schedule/calendar.html', context)

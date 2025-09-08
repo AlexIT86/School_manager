@@ -119,6 +119,11 @@
                                     {% endif %}
                                 </span>
                             </li>
+                            <li>
+                                <span class="dropdown-item-text small text-muted">
+                                    Program: {{ user.student_profile.ore_start|time:"H:i" }} • {{ user.student_profile.nr_ore_pe_zi }} ore
+                                </span>
+                            </li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{% url 'core:profile' %}">
                                 <i class="fas fa-user me-2"></i>Profil
