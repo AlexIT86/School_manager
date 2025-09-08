@@ -77,18 +77,22 @@
         <div class="row">
             <div class="col-md-6">
                 <div class="filter-group">
-                    <span class="filter-label">Filtrează pe materii:</span>
-                    <div class="subject-filter" id="subjectFilter">
-                        <div class="subject-chip active" data-subject="all">
-                            <i class="fas fa-check-circle me-1"></i>Toate
+                    <button class="btn btn-outline-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#subjectFiltersCollapse" aria-expanded="false" aria-controls="subjectFiltersCollapse">
+                        <i class="fas fa-filter me-1"></i>Filtrează pe materii
+                    </button>
+                    <div id="subjectFiltersCollapse" class="collapse mt-2">
+                        <div class="subject-filter" id="subjectFilter">
+                            <div class="subject-chip active" data-subject="all">
+                                <i class="fas fa-check-circle me-1"></i>Toate
+                            </div>
+                            {% for s in subject_filters %}
+                            <div class="subject-chip" 
+                                 data-subject="{{ s.name|lower }}"
+                                 style="--subject-color: {{ s.color }};">
+                                {{ s.name }}
+                            </div>
+                            {% endfor %}
                         </div>
-                        {% for s in subject_filters %}
-                        <div class="subject-chip" 
-                             data-subject="{{ s.name|lower }}"
-                             style="--subject-color: {{ s.color }};">
-                            {{ s.name }}
-                        </div>
-                        {% endfor %}
                     </div>
                 </div>
             </div>
