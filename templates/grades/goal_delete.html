@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}Șterge obiectiv - School Manager{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-7">
+      <div class="card shadow-sm">
+        <div class="card-header bg-danger text-white">
+          <h5 class="mb-0"><i class="fas fa-trash me-2"></i>Confirmă ștergerea obiectivului</h5>
+        </div>
+        <div class="card-body">
+          <p>Ești sigur că vrei să ștergi acest obiectiv?</p>
+          <form method="post">
+            {% csrf_token %}
+            <a href="{% url 'grades:goals' %}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i> Anulează</a>
+            <button type="submit" class="btn btn-danger"><i class="fas fa-trash me-1"></i> Șterge</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+
