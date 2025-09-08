@@ -5,6 +5,7 @@
 
 {% block extra_css %}
 <style>
+  @page { size: A4 landscape; margin: 12mm; }
   /* Layout curat pentru print */
   .print-header {
     display: flex;
@@ -43,6 +44,29 @@
     font-weight: 600;
     text-align: left;
   }
+  /* Tabel compact pe o singură pagină */
+  .compact-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    font-size: 0.9rem;
+  }
+  .compact-table th, .compact-table td {
+    border: 1px solid #dee2e6;
+    padding: 0.35rem 0.45rem;
+    vertical-align: top;
+    word-wrap: break-word;
+  }
+  .compact-table thead th {
+    background: #f8f9fa;
+    text-align: center;
+    font-weight: 700;
+  }
+  .col-ora { width: 70px; }
+  .col-zi { width: calc((100% - 70px) / 5); }
+  .entry-box { margin-bottom: 0.25rem; border-left: 4px solid #aaa; padding-left: 6px; }
+  .entry-title { font-weight: 600; }
+  .entry-sub { color: #6c757d; font-size: 0.8rem; }
   .no-print {
     display: inline-block;
   }
@@ -74,48 +98,44 @@
     </div>
   </div>
 
-  <div class="row">
-    {% for day_name in weekdays %}
-    <div class="col-12 col-md-6">
-      <div class="day-card">
-        <div class="day-title">{{ day_name }}</div>
-        <table class="day-table">
-          <thead>
-            <tr>
-              <th style="width: 60px;">Ora</th>
-              <th>Materie</th>
-              <th style="width: 140px;">Interval</th>
-              <th style="width: 100px;">Sala</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for entry in schedule_data|get_item:day_name %}
-            <tr>
-              <td>{{ entry.numar_ora }}</td>
-              <td>
-                <strong>{{ entry.subject.nume }}</strong>
-                {% if entry.note %}<div class="text-muted small">{{ entry.note }}</div>{% endif %}
-              </td>
-              <td>
-                {% if entry.ora_inceput and entry.ora_sfarsit %}
-                  {{ entry.ora_inceput|time:"H:i" }}–{{ entry.ora_sfarsit|time:"H:i" }}
-                {% else %}
-                  —
-                {% endif %}
-              </td>
-              <td>{% if entry.sala %}{{ entry.sala }}{% else %}—{% endif %}</td>
-            </tr>
-            {% empty %}
-            <tr>
-              <td colspan="4" class="text-muted">Nu există ore programate.</td>
-            </tr>
+  <!-- Tabel compact: rânduri = ore (1..max_hours), coloane = zile (Luni..Vineri) -->
+  <table class="compact-table">
+    <thead>
+      <tr>
+        <th class="col-ora">Ora</th>
+        {% for day_name in weekdays %}
+          <th class="col-zi">{{ day_name }}</th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for idx in hour_slots %}
+      <tr>
+        <th class="text-center">{{ idx }}</th>
+        {% for day_name in weekdays %}
+        <td>
+          {% with day_entries=schedule_data|get_item:day_name %}
+            {% for entry in day_entries %}
+              {% if entry.numar_ora == idx %}
+              <div class="entry-box" style="border-left-color: {{ entry.subject.culoare }};">
+                <div class="entry-title">{{ entry.subject.nume }}</div>
+                <div class="entry-sub">
+                  {% if entry.ora_inceput and entry.ora_sfarsit %}
+                    {{ entry.ora_inceput|time:"H:i" }}–{{ entry.ora_sfarsit|time:"H:i" }}
+                  {% endif %}
+                  {% if entry.sala %} • Sala {{ entry.sala }}{% endif %}
+                </div>
+                {% if entry.note %}<div class="entry-sub">{{ entry.note }}</div>{% endif %}
+              </div>
+              {% endif %}
             {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-    {% endfor %}
-  </div>
+          {% endwith %}
+        </td>
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </div>
 {% endblock %}
 

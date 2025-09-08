@@ -547,14 +547,59 @@ def schedule_print_view(request):
 
         schedule_data[day_name] = list(entries)
 
-    # Informații student
-    profile = user.student_profile
+    # Informații student + parametrizare oră/pausă
+    profile = getattr(user, 'student_profile', None)
+    max_hours = 8
+    start_base = time(8, 0)
+    class_duration = 50
+    break_duration = 10
+    try:
+        if profile:
+            if getattr(profile, 'nr_ore_pe_zi', None):
+                max_hours = int(profile.nr_ore_pe_zi)
+            if getattr(profile, 'ore_start', None):
+                start_base = profile.ore_start
+            if getattr(profile, 'durata_ora', None):
+                class_duration = int(profile.durata_ora or 50)
+            if getattr(profile, 'durata_pauza', None):
+                break_duration = int(profile.durata_pauza or 10)
+    except Exception:
+        pass
+
+    # Fallback: dacă există o oră mai mare în date, folosește acea limită
+    try:
+        data_max = 0
+        for day_entries in schedule_data.values():
+            for e in day_entries:
+                if getattr(e, 'numar_ora', 0) and int(e.numar_ora) > data_max:
+                    data_max = int(e.numar_ora)
+        if data_max > 0:
+            max_hours = max(max_hours, data_max)
+    except Exception:
+        pass
+
+    # Etichete de timp pentru rândurile din tabelul compact
+    time_labels = []
+    try:
+        from datetime import datetime as dt
+        day_start_dt = dt.combine(date.today(), start_base)
+        slot_total = class_duration + break_duration
+        for idx in range(max_hours):
+            slot_start_dt = day_start_dt + timedelta(minutes=idx * slot_total)
+            slot_end_dt = slot_start_dt + timedelta(minutes=class_duration)
+            time_labels.append({'start': slot_start_dt.time(), 'end': slot_end_dt.time()})
+    except Exception:
+        # fallback gol dacă apare vreo problemă
+        time_labels = []
 
     context = {
         'schedule_data': schedule_data,
         'weekdays': weekdays,
         'profile': profile,
         'print_date': date.today(),
+        'max_hours': max_hours,
+        'time_labels': time_labels,
+        'hour_slots': list(range(1, max_hours + 1)),
     }
 
     return render(request, 'schedule/print.html', context)
