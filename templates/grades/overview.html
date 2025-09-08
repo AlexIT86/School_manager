@@ -389,7 +389,7 @@
             <span class="stat-label">Note totale</span>
         </div>
         <div class="stat-card" style="--stat-color: #4facfe;">
-            <span class="stat-value" data-decimals="2">{{ general_stats.avg_grade|floatformat:2 }}</span>
+            <span class="stat-value" data-decimals="2" data-target="{% localize off %}{{ general_stats.avg_grade|floatformat:2 }}{% endlocalize %}">{{ general_stats.avg_grade|floatformat:2 }}</span>
             <span class="stat-label">Media generală</span>
         </div>
         <div class="stat-card" style="--stat-color: #ffc107;">
@@ -695,7 +695,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Animate stat values
     const statValues = document.querySelectorAll('.stat-value');
     statValues.forEach(stat => {
-        const target = parseFloat(stat.textContent);
+        const target = parseFloat(stat.getAttribute('data-target') || stat.textContent);
         if (!isNaN(target)) {
             const decimals = parseInt(stat.getAttribute('data-decimals') || (Number.isInteger(target) ? '0' : '2'), 10);
             animateCounter(stat, target, decimals);
