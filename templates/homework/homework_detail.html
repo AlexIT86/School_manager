@@ -167,6 +167,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
   imgEl.addEventListener('mousedown', pd); imgEl.addEventListener('mousemove', pm); window.addEventListener('mouseup', pu);
   imgEl.addEventListener('touchstart', pd, {passive:true}); imgEl.addEventListener('touchmove', pm, {passive:false}); imgEl.addEventListener('touchend', pu);
+
+  // Pinch-to-zoom on mobile
+  let pinchStartDist = 0; let startScale = 1;
+  function getTouchDist(touches){ const [a,b]=touches; const dx=a.clientX-b.clientX; const dy=a.clientY-b.clientY; return Math.hypot(dx,dy); }
+  imgEl.addEventListener('touchstart', e=>{ if(e.touches.length===2){ pinchStartDist = getTouchDist(e.touches); startScale = scale; } }, {passive:true});
+  imgEl.addEventListener('touchmove', e=>{ if(e.touches.length===2){ e.preventDefault(); const dist=getTouchDist(e.touches); const delta=(dist - pinchStartDist)/200; scale = Math.max(minScale, Math.min(maxScale, startScale + delta)); apply(); } }, {passive:false});
 });
 </script>
 {% endblock %}

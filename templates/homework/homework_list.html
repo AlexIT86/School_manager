@@ -521,11 +521,16 @@
 
 {% block extra_js %}
 <script>
+function getCSRFToken() {
+    const el = document.querySelector('[name=csrfmiddlewaretoken]');
+    return el ? el.value : (document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '');
+}
+
 function toggleHomework(homeworkId) {
     fetch(`/teme/${homeworkId}/toggle-complete/`, {
         method: 'POST',
         headers: {
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'X-CSRFToken': getCSRFToken(),
             'X-Requested-With': 'XMLHttpRequest'
         }
     })
@@ -542,7 +547,7 @@ function startSession(homeworkId) {
     fetch(`/teme/${homeworkId}/session/start/`, {
         method: 'POST',
         headers: {
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'X-CSRFToken': getCSRFToken(),
             'X-Requested-With': 'XMLHttpRequest'
         }
     })
