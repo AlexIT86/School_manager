@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block title %}Semestre - School Manager{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0"><i class="fas fa-calendar-alt me-2 text-primary"></i>Semestre</h4>
+    <a href="{% url 'grades:semester_create' %}" class="btn btn-primary">
+      <i class="fas fa-plus me-1"></i>Semestru nou
+    </a>
+  </div>
+
+  {% if semesters %}
+  <div class="card shadow-sm">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+          <thead class="table-light">
+            <tr>
+              <th style="width: 120px;">Semestru</th>
+              <th>An școlar</th>
+              <th style="width: 200px;">Perioadă</th>
+              <th style="width: 120px;">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in semesters %}
+            <tr>
+              <td>
+                <span class="fw-semibold">{{ s.numar }}</span>
+              </td>
+              <td>{{ s.an_scolar }}</td>
+              <td>
+                {{ s.data_inceput|date:'d.m.Y' }} – {{ s.data_sfarsit|date:'d.m.Y' }}
+              </td>
+              <td>
+                {% if s.activ %}
+                <span class="badge bg-success">Activ</span>
+                {% else %}
+                <span class="badge bg-secondary">Inactiv</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="alert alert-info">
+    Nu există semestre definite. Creează un semestru nou.
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+
