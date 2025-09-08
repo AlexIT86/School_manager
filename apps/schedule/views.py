@@ -90,10 +90,21 @@ def schedule_calendar_view(request):
     }
 
     # Statistici rapide
+    # Busiest day weighted by subject rating
+    busy_scores = {}
+    for day_name, data in schedule_data.items():
+        score = 0
+        for entry in data['entries']:
+            try:
+                score += getattr(entry.subject, 'rating', 3) or 3
+            except Exception:
+                score += 3
+        busy_scores[day_name] = score
+
     stats = {
         'total_hours_per_week': sum(len(day['entries']) for day in schedule_data.values()),
         'subjects_count': ScheduleEntry.objects.filter(user=user).values('subject').distinct().count(),
-        'busiest_day': max(schedule_data.items(), key=lambda x: len(x[1]['entries']))[0] if schedule_data else None,
+        'busiest_day': max(busy_scores, key=busy_scores.get) if busy_scores else None,
     }
 
     # Ora curentă pentru highlight în UI (în funcție de profil)

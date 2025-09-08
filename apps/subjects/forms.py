@@ -9,7 +9,7 @@ class SubjectForm(forms.ModelForm):
 
     class Meta:
         model = Subject
-        fields = ['nume', 'nume_profesor', 'sala', 'culoare', 'descriere', 'manual', 'activa']
+        fields = ['nume', 'nume_profesor', 'sala', 'culoare', 'descriere', 'manual', 'rating', 'activa']
         labels = {
             'nume': 'Numele materiei',
             'nume_profesor': 'Numele profesorului',
@@ -17,6 +17,7 @@ class SubjectForm(forms.ModelForm):
             'culoare': 'Culoare pentru calendar',
             'descriere': 'Descriere și notițe',
             'manual': 'Manual utilizat',
+            'rating': 'Importanță (1-5 stele)',
             'activa': 'Materia este activă',
         }
         widgets = {
@@ -46,6 +47,11 @@ class SubjectForm(forms.ModelForm):
             'manual': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'ex: Manual de Matematică clasa a 6-a, Editura Humanitas'
+            }),
+            'rating': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '1',
+                'max': '5'
             }),
             'activa': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'

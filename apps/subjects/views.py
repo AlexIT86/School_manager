@@ -134,6 +134,15 @@ def subject_edit_view(request, subject_id):
             messages.success(request, f'Materia "{subject.nume}" a fost actualizată!')
             return redirect('subjects:detail', subject_id=subject.id)
     else:
+        # Permite setarea rapidă a rating-ului din query (?rating=1..5)
+        rating = request.GET.get('rating')
+        if rating and rating.isdigit():
+            r = int(rating)
+            if 1 <= r <= 5:
+                subject.rating = r
+                subject.save(update_fields=['rating'])
+                messages.success(request, f'Rating setat la {r} stele pentru "{subject.nume}"!')
+                return redirect('subjects:list')
         form = SubjectForm(instance=subject)
 
     context = {

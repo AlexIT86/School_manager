@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.contrib.auth.models import User
 import os
 
@@ -32,6 +33,13 @@ class Subject(models.Model):
 
     # Status
     activa = models.BooleanField(default=True, help_text="Materia se mai studiază în acest semestru")
+
+    # Importanță/Raiting (1-5 stele)
+    rating = models.PositiveSmallIntegerField(
+        default=3,
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
+        help_text="Importanța materiei (1-5 stele)"
+    )
 
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
