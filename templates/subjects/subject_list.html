@@ -9,7 +9,7 @@
     transition: all 0.3s ease;
     border: none;
     border-radius: 15px;
-    overflow: hidden;
+    overflow: visible; /* allow dropdown to overflow outside the card */
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
@@ -73,6 +73,7 @@
     padding: 15px 20px;
     background: #f8f9fa;
     border-top: 1px solid #e9ecef;
+    position: relative;
 }
 
 .grade-badge {
@@ -354,10 +355,10 @@
                                 
                                 <div class="dropdown">
                                     <button class="btn btn-link btn-sm text-muted" type="button" 
-                                            data-bs-toggle="dropdown">
+                                            data-bs-toggle="dropdown" aria-expanded="false">
                                         <i class="fas fa-ellipsis-v"></i>
                                     </button>
-                                    <ul class="dropdown-menu dropdown-menu-end">
+                                    <ul class="dropdown-menu dropdown-menu-end shadow" style="z-index: 1080; min-width: 260px;">
                                         <li class="px-3 py-2">
                                             <label class="small text-muted">Setează rapid</label>
                                             <input type="range" min="1" max="5" value="{{ item.subject.rating }}" 
