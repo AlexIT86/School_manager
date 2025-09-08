@@ -389,7 +389,7 @@
             <span class="stat-label">Note totale</span>
         </div>
         <div class="stat-card" style="--stat-color: #4facfe;">
-            <span class="stat-value">{{ general_stats.avg_grade|floatformat:2 }}</span>
+            <span class="stat-value" data-decimals="2">{{ general_stats.avg_grade|floatformat:2 }}</span>
             <span class="stat-label">Media generală</span>
         </div>
         <div class="stat-card" style="--stat-color: #ffc107;">
@@ -697,12 +697,13 @@ document.addEventListener('DOMContentLoaded', function() {
     statValues.forEach(stat => {
         const target = parseFloat(stat.textContent);
         if (!isNaN(target)) {
-            animateCounter(stat, target);
+            const decimals = parseInt(stat.getAttribute('data-decimals') || (Number.isInteger(target) ? '0' : '2'), 10);
+            animateCounter(stat, target, decimals);
         }
     });
 });
 
-function animateCounter(element, target) {
+function animateCounter(element, target, decimals) {
     const duration = 2000;
     const startTime = performance.now();
     const startValue = 0;
@@ -712,11 +713,7 @@ function animateCounter(element, target) {
         const progress = Math.min(elapsed / duration, 1);
         const value = startValue + (target - startValue) * easeOutQuart(progress);
         
-        if (Number.isInteger(target)) {
-            element.textContent = Math.floor(value);
-        } else {
-            element.textContent = value.toFixed(2);
-        }
+        element.textContent = Number.isInteger(target) && decimals === 0 ? Math.floor(value) : value.toFixed(decimals);
         
         if (progress < 1) {
             requestAnimationFrame(updateCounter);
