@@ -13,6 +13,12 @@ from apps.subjects.models import Subject
 from apps.homework.models import Homework
 from apps.grades.models import Grade, SubjectGradeStats
 from apps.schedule.models import ScheduleEntry
+from django.conf import settings
+
+try:
+    from .email_utils import send_email
+except Exception:
+    send_email = None
 
 
 def register_view(request):
@@ -26,6 +32,21 @@ def register_view(request):
             user = form.save()
             username = form.cleaned_data.get('username')
             messages.success(request, f'Contul pentru {username} a fost creat cu succes!')
+
+            # Trimite email de bun venit (daca este configurat SendGrid)
+            if send_email and settings.SENDGRID_API_KEY and user.email:
+                try:
+                    send_email(
+                        to_emails=[user.email],
+                        subject='Bun venit în School Manager',
+                        html_content=f"""
+                        <p>Bun venit, {user.first_name or user.username}!</p>
+                        <p>Contul tău a fost creat cu succes. Spor la folosirea aplicației!</p>
+                        <p>Cu drag,<br>School Manager</p>
+                        """
+                    )
+                except Exception:
+                    pass
 
             # Autentificare automată
             user = authenticate(username=username, password=form.cleaned_data.get('password1'))

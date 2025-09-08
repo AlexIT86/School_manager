@@ -153,3 +153,8 @@ MESSAGE_TAGS = {
     messages.WARNING: 'alert-warning',
     messages.ERROR: 'alert-danger',
 }
+
+# Email / SendGrid
+SENDGRID_API_KEY = config('SENDGRID_API_KEY', default='')
+SENDGRID_FROM_EMAIL = config('SENDGRID_FROM_EMAIL', default='no-reply@example.com')
+SENDGRID_EU_RESIDENCY = config('SENDGRID_EU_RESIDENCY', default=False, cast=bool)
