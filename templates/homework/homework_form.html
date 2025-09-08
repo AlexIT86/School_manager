@@ -1,1 +1,101 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title|default:'Temă' }} - School Manager{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">{{ title|default:'Temă' }}</h5>
+        </div>
+        <div class="card-body">
+          <form method="post" data-validate>
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+              {% for error in form.non_field_errors %}
+              <div>{{ error }}</div>
+              {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="mb-3">
+              {{ form.subject.label_tag }}
+              {{ form.subject }}
+            </div>
+
+            <div class="mb-3">
+              {{ form.titlu.label_tag }}
+              {{ form.titlu }}
+            </div>
+
+            <div class="mb-3">
+              {{ form.descriere.label_tag }}
+              {{ form.descriere }}
+            </div>
+
+            <div class="row g-3">
+              <div class="col-md-6">
+                {{ form.data_primita.label_tag }}
+                {{ form.data_primita }}
+              </div>
+              <div class="col-md-6">
+                {{ form.deadline.label_tag }}
+                {{ form.deadline }}
+              </div>
+            </div>
+
+            <div class="row g-3 mt-1">
+              <div class="col-md-6">
+                {{ form.prioritate.label_tag }}
+                {{ form.prioritate }}
+              </div>
+              <div class="col-md-6">
+                {{ form.dificultate.label_tag }}
+                {{ form.dificultate }}
+              </div>
+            </div>
+
+            <div class="row g-3 mt-1">
+              <div class="col-md-6">
+                {{ form.timp_estimat.label_tag }}
+                {{ form.timp_estimat }}
+              </div>
+              <div class="col-md-6">
+                <div class="form-check mt-4">
+                  {{ form.reminder_activ }}
+                  <label class="form-check-label" for="id_reminder_activ">Activează reminder</label>
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-3 mt-1">
+              {{ form.zile_reminder.label_tag }}
+              {{ form.zile_reminder }}
+            </div>
+
+            <div class="mb-3">
+              {{ form.note_personale.label_tag }}
+              {{ form.note_personale }}
+            </div>
+
+            <div class="d-flex justify-content-between mt-3">
+              <a href="{% url 'homework:list' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Înapoi la listă
+              </a>
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save me-1"></i>Salvează
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
  
