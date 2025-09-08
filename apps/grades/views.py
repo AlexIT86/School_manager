@@ -18,20 +18,44 @@ def grades_overview_view(request):
     """Vedere generală pentru note și absențe"""
     user = request.user
 
-    # Semestrul activ
+    # Semestrul activ - determinare corectă după calendar școlar (Sem 1: Sep–Jan, Sem 2: Feb–Jun)
+    today = date.today()
+    current_year = today.year
+    current_month = today.month
+
+    # Determină numărul și anul școlar curent
+    if current_month >= 9 or current_month <= 1:
+        desired_sem_num = 1
+        start_year = current_year if current_month >= 9 else current_year - 1
+        an_scolar = f"{start_year}-{start_year + 1}"
+        data_inceput = date(start_year, 9, 15)
+        data_sfarsit = date(start_year + 1, 1, 31)
+    else:
+        desired_sem_num = 2
+        start_year = current_year - 1  # semestrul 2 aparține aceluiași an școlar început în toamnă
+        an_scolar = f"{start_year}-{start_year + 1}"
+        data_inceput = date(current_year, 2, 1)
+        data_sfarsit = date(current_year, 6, 15)
+
     active_semester = Semester.objects.filter(user=user, activ=True).first()
-    if not active_semester:
-        # Creează semestrul curent dacă nu există
-        current_year = date.today().year
-        semester_num = 1 if date.today().month < 6 else 2
-        active_semester = Semester.objects.create(
-            user=user,
-            numar=semester_num,
-            an_scolar=f"{current_year}-{current_year + 1}",
-            data_inceput=date(current_year, 9, 15) if semester_num == 1 else date(current_year, 2, 1),
-            data_sfarsit=date(current_year + 1, 1, 31) if semester_num == 1 else date(current_year, 6, 15),
-            activ=True
-        )
+
+    # Dacă nu există sau nu corespunde cu semestrul curent, activează/creează cel corect
+    if not active_semester or active_semester.numar != desired_sem_num or active_semester.an_scolar != an_scolar:
+        active_semester = Semester.objects.filter(user=user, numar=desired_sem_num, an_scolar=an_scolar).first()
+        if not active_semester:
+            active_semester = Semester.objects.create(
+                user=user,
+                numar=desired_sem_num,
+                an_scolar=an_scolar,
+                data_inceput=data_inceput,
+                data_sfarsit=data_sfarsit,
+                activ=True
+            )
+        else:
+            # Marchează ca activ și dezactivează celelalte
+            Semester.objects.filter(user=user).update(activ=False)
+            active_semester.activ = True
+            active_semester.save()
 
     # Note recente (ultimele 10)
     recent_grades = Grade.objects.filter(

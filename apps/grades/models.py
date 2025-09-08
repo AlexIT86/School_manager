@@ -236,7 +236,7 @@ class SubjectGradeStats(models.Model):
             subject=self.subject,
             tip='nota',
             semestru=self.semester.numar
-        ).values_list('valoare', flat=True)
+        ).exclude(valoare__isnull=True).values_list('valoare', flat=True)
 
         if note:
             self.numar_note = len(note)
