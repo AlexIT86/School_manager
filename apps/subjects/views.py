@@ -5,6 +5,7 @@ from django.http import JsonResponse, HttpResponse
 from django.db.models import Count, Avg
 from django.core.paginator import Paginator
 from django.conf import settings
+from django.views.decorators.http import require_POST
 import os
 
 from .models import Subject, SubjectFile, SubjectNote
@@ -152,6 +153,27 @@ def subject_edit_view(request, subject_id):
     }
 
     return render(request, 'subjects/subject_form.html', context)
+
+
+@login_required
+def subject_set_rating_view(request, subject_id, value):
+    """Setează rating-ul unei materii (AJAX sau GET fallback)."""
+    subject = get_object_or_404(Subject, id=subject_id, user=request.user)
+    try:
+        value = int(value)
+        if value < 1 or value > 5:
+            raise ValueError
+        subject.rating = value
+        subject.save(update_fields=['rating'])
+
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': True, 'rating': subject.rating})
+        messages.success(request, f'Rating actualizat la {value} stele pentru "{subject.nume}"!')
+    except Exception:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'error': 'Rating invalid'}, status=400)
+        messages.error(request, 'Rating invalid.')
+    return redirect('subjects:list')
 
 
 @login_required

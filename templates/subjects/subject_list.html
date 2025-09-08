@@ -269,12 +269,12 @@
                                     <span class="stat-label">Media</span>
                                 </div>
                                 <div class="stat-item">
-                                    <span class="stat-value">
+                                    <span class="stat-value rating-stars" data-subject-id="{{ item.subject.id }}">
                                         {% for i in "12345" %}
                                             {% if forloop.counter <= item.subject.rating %}
-                                                <i class="fas fa-star text-warning"></i>
+                                                <i class="fas fa-star text-warning" data-value="{{ forloop.counter }}"></i>
                                             {% else %}
-                                                <i class="far fa-star text-warning"></i>
+                                                <i class="far fa-star text-warning" data-value="{{ forloop.counter }}"></i>
                                             {% endif %}
                                         {% endfor %}
                                     </span>
@@ -358,21 +358,10 @@
                                         <i class="fas fa-ellipsis-v"></i>
                                     </button>
                                     <ul class="dropdown-menu dropdown-menu-end">
-                                        <li>
-                                            <div class="px-3 py-2">
-                                                <label class="small text-muted">Setează rating</label>
-                                                <div class="d-flex align-items-center gap-1">
-                                                    {% for r in "12345" %}
-                                                    <a href="{% url 'subjects:edit' item.subject.id %}?rating={{ forloop.counter }}" class="text-warning">
-                                                        {% if forloop.counter <= item.subject.rating %}
-                                                        <i class="fas fa-star"></i>
-                                                        {% else %}
-                                                        <i class="far fa-star"></i>
-                                                        {% endif %}
-                                                    </a>
-                                                    {% endfor %}
-                                                </div>
-                                            </div>
+                                        <li class="px-3 py-2">
+                                            <label class="small text-muted">Setează rapid</label>
+                                            <input type="range" min="1" max="5" value="{{ item.subject.rating }}" 
+                                                   class="form-range subject-rating-slider" data-subject-id="{{ item.subject.id }}">
                                         </li>
                                         <li>
                                             <a class="dropdown-item" href="{% url 'homework:create' %}?subject={{ item.subject.id }}">
@@ -427,6 +416,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const statusFilters = document.querySelectorAll('input[name="statusFilter"]');
     const subjectsGrid = document.getElementById('subjectsGrid');
     const subjectItems = document.querySelectorAll('.subject-item');
+    const ratingStarsGroups = document.querySelectorAll('.rating-stars');
+    const ratingSliders = document.querySelectorAll('.subject-rating-slider');
     
     // Search functionality
     searchInput.addEventListener('input', function() {
@@ -531,6 +522,47 @@ document.addEventListener('DOMContentLoaded', function() {
             this.style.transform = 'translateY(0)';
         });
     });
+
+    // Inline star rating (click to set)
+    ratingStarsGroups.forEach(group => {
+        group.addEventListener('click', function(e) {
+            const star = e.target.closest('i[data-value]');
+            if (!star) return;
+            const value = parseInt(star.dataset.value);
+            const subjectId = this.dataset.subjectId;
+            updateRating(subjectId, value, this);
+        });
+    });
+
+    // Slider change in dropdown
+    ratingSliders.forEach(slider => {
+        slider.addEventListener('change', function() {
+            const subjectId = this.dataset.subjectId;
+            const group = document.querySelector(`.rating-stars[data-subject-id="${subjectId}"]`);
+            updateRating(subjectId, parseInt(this.value), group);
+        });
+    });
+
+    function updateRating(subjectId, value, starsGroupEl) {
+        fetch(`/materii/${subjectId}/rating/${value}/`, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success && starsGroupEl) {
+                const stars = starsGroupEl.querySelectorAll('i[data-value]');
+                stars.forEach(st => {
+                    const v = parseInt(st.dataset.value);
+                    st.classList.toggle('fas', v <= value);
+                    st.classList.toggle('far', v > value);
+                });
+                SchoolManager.showAlert('Rating actualizat!', 'success');
+            } else {
+                SchoolManager.showAlert('Eroare la setarea rating-ului.', 'danger');
+            }
+        })
+        .catch(() => SchoolManager.showAlert('Eroare de rețea.', 'danger'));
+    }
 });
 </script>
 {% endblock %}
