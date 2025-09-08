@@ -8,6 +8,7 @@ from django.utils import timezone
 from datetime import date, timedelta
 import calendar
 import json
+from django.core.serializers.json import DjangoJSONEncoder
 import os
 
 from .models import Homework, HomeworkFile, HomeworkSession, HomeworkReminder
@@ -543,6 +544,7 @@ def homework_stats_view(request):
 
     # Statistici pe materii
     subject_stats = []
+    subject_stats_js = []
     for subject in Subject.objects.filter(user=user, activa=True):
         subject_homework = total_homework.filter(subject=subject)
         subject_completed = subject_homework.filter(finalizata=True)
@@ -553,6 +555,12 @@ def homework_stats_view(request):
             'completed': subject_completed.count(),
             'completion_rate': (subject_completed.count() / max(subject_homework.count(), 1)) * 100,
             'avg_time': subject_completed.aggregate(avg=Avg('timp_lucrat'))['avg'] or 0,
+        })
+        subject_stats_js.append({
+            'subject_name': subject.nume,
+            'total': subject_homework.count(),
+            'completed': subject_completed.count(),
+            'avg_time': float(subject_completed.aggregate(avg=Avg('timp_lucrat'))['avg'] or 0),
         })
 
     # Productivitate pe zile din săptămână (0=Luni..6=Duminică)
@@ -571,6 +579,8 @@ def homework_stats_view(request):
         'general_stats': general_stats,
         'subject_stats': subject_stats,
         'weekday_stats': weekday_stats,
+        'subject_stats_json': json.dumps(subject_stats_js, cls=DjangoJSONEncoder),
+        'weekday_stats_json': json.dumps(weekday_stats, cls=DjangoJSONEncoder),
     }
 
     return render(request, 'homework/homework_stats.html', context)

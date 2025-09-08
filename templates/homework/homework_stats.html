@@ -50,7 +50,7 @@
 document.addEventListener('DOMContentLoaded', function() {
   // Productivitate pe zile
   const weekdayMap = ['L', 'Ma', 'Mi', 'J', 'V', 'S', 'D'];
-  const wd = {{ weekday_stats|safe }}.map(x => ({ label: weekdayMap[parseInt(x.weekday, 10)], value: x.count }));
+  const wd = JSON.parse('{{ weekday_stats_json|escapejs }}').map(x => ({ label: weekdayMap[parseInt(x.weekday, 10)], value: x.count }));
   new Chart(document.getElementById('weekdayProductivity'), {
     type: 'bar',
     data: { labels: wd.map(x => x.label), datasets: [{ label: 'Teme finalizate', data: wd.map(x => x.value), backgroundColor: '#17a2b8' }]},
@@ -58,10 +58,10 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   // Statistici pe materii
-  const subj = {{ subject_stats|safe }};
+  const subj = JSON.parse('{{ subject_stats_json|escapejs }}');
   new Chart(document.getElementById('subjectCompletion'), {
     type: 'bar',
-    data: { labels: subj.map(x => x.subject.nume), datasets: [
+    data: { labels: subj.map(x => x.subject_name), datasets: [
       { label: 'Total', data: subj.map(x => x.total), backgroundColor: '#6c757d' },
       { label: 'Finalizate', data: subj.map(x => x.completed), backgroundColor: '#28a745' }
     ]},
