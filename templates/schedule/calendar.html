@@ -179,10 +179,17 @@
                             {% if entry.pending_homework %}
                             <div class="homework-pending mt-1">
                                 <i class="fas fa-tasks me-1"></i>
-                                <span class="badge bg-warning text-dark">{{ entry.pending_homework|length }} temă{% if entry.pending_homework|length > 1 %}e{% endif %} nefinalizat{% if entry.pending_homework|length > 1 %}e{% endif %}</span>
+                                <span class="badge bg-warning text-dark"
+                                      data-bs-toggle="popover"
+                                      data-bs-html="true"
+                                      data-bs-trigger="hover focus"
+                                      data-bs-placement="top"
+                                      data-bs-content="<ul class='list-unstyled mb-0'>{% for hw in entry.pending_homework %}<li><a href='/teme/{{ hw.id }}/' class='text-decoration-none'>{{ hw.titlu|truncatechars:40|escape }}</a> <small class='text-muted'>({{ hw.deadline|date:'d.m' }})</small></li>{% endfor %}{% if entry.pending_homework|length > 3 %}<li class='mt-1'><a href='{% url 'homework:list' %}?subject={{ entry.subject.id }}' class='text-decoration-none'>… vezi toate</a></li>{% endif %}</ul>">
+                                    {{ entry.pending_homework|length }} temă{% if entry.pending_homework|length > 1 %}e{% endif %} nefinalizat{% if entry.pending_homework|length > 1 %}e{% endif %}
+                                </span>
                                 <div class="small mt-1">
                                     {% for hw in entry.pending_homework|slice:":3" %}
-                                        <a href="{% url 'homework:detail' hw.id %}" class="text-decoration-none text-light d-inline-block">
+                                        <a href="{% url 'homework:detail' hw.id %}" class="text-decoration-none text-light d-inline-block hw-link" data-hw-id="{{ hw.id }}">
                                             • {{ hw.titlu|truncatechars:30 }} ({{ hw.deadline|date:'d.m' }})
                                         </a><br>
                                     {% endfor %}
