@@ -131,6 +131,7 @@
                     {{ entry.ora_inceput|time:"H:i" }}–{{ entry.ora_sfarsit|time:"H:i" }}
                   {% endif %}
                   {% if entry.sala %} • Sala {{ entry.sala }}{% endif %}
+                  {% if entry.subject.nume_profesor %} • Prof. {{ entry.subject.nume_profesor }}{% endif %}
                 </div>
                 {% if entry.note %}<div class="entry-sub">{{ entry.note }}</div>{% endif %}
               </div>
@@ -148,7 +149,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-YcsIP7LQ2nQnB5yM8b1rqJxw0g4RqQ0n4mQd4Vh6nXR3ZrT8mJc6x2x2rYkGxsHqVnH0G8v3No89c8E3hGfP4g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
 <script>
 document.getElementById('btnExportPdf')?.addEventListener('click', function() {
   const runExport = function() {
