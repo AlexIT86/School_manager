@@ -151,15 +151,29 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-YcsIP7LQ2nQnB5yM8b1rqJxw0g4RqQ0n4mQd4Vh6nXR3ZrT8mJc6x2x2rYkGxsHqVnH0G8v3No89c8E3hGfP4g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
 document.getElementById('btnExportPdf')?.addEventListener('click', function() {
-  const element = document.getElementById('printArea');
-  const opt = {
-    margin: [5, 8, 5, 8],
-    filename: 'orar-scolar.pdf',
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+  const runExport = function() {
+    const element = document.getElementById('printArea');
+    const opt = {
+      margin: [5, 8, 5, 8],
+      filename: 'orar-scolar.pdf',
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+    };
+    window.html2pdf().set(opt).from(element).save();
   };
-  html2pdf().set(opt).from(element).save();
+
+  if (window.html2pdf) {
+    runExport();
+  } else {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js';
+    s.onload = runExport;
+    s.onerror = function() {
+      alert('Nu s-a putut încărca librăria PDF. Încearcă din nou.');
+    };
+    document.body.appendChild(s);
+  }
 });
 </script>
 {% endblock %}
