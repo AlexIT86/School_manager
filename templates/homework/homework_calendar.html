@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load schedule_extras %}
 
 {% block title %}Calendar Teme{% endblock %}
 
@@ -42,7 +43,6 @@
                                     <strong>{{ day }}</strong>
                                 </div>
                                 <div class="mt-2">
-                                    {% if calendar_data.day %}{% endif %}
                                     {% for hw in calendar_data|get_item:day %}
                                         <div class="small mb-1" style="border-left: 3px solid {{ hw.subject.culoare }}; padding-left: 6px;">
                                             <a class="text-decoration-none" href="{% url 'homework:detail' hw.id %}">
