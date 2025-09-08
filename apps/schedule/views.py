@@ -175,26 +175,30 @@ def schedule_calendar_view(request):
             day_num = hw.deadline.day
             month_events.setdefault(day_num, []).append({
                 'type': 'homework',
-                'label': f"{hw.subject.nume}: {hw.titlu}",
+                'label': f"{hw.titlu}",
+                'subject': hw.subject.nume,
                 'color': '#ff6b6b',
                 'url': f"/teme/{hw.id}/"
             })
         # Grades/Absences
         for gr in Grade.objects.filter(user=user, data__range=[first_day, last_day]).select_related('subject'):
             day_num = gr.data.day
-            label = gr.subject.nume
+            label = ''
             if gr.tip == 'nota':
-                label += f" {gr.valoare}"
+                label = f"{gr.valoare}"
             else:
-                label += f" {gr.get_tip_display()}"
+                label = gr.get_tip_display()
             month_events.setdefault(day_num, []).append({
                 'type': 'grade',
                 'label': label,
+                'subject': gr.subject.nume,
                 'color': '#f9ca24',
                 'url': f"/note/{gr.id}/"
             })
 
         context['month_events_json'] = json.dumps(month_events)
+        context['month_current'] = month
+        context['year_current'] = year
     except Exception:
         context['month_events_json'] = '[]'
 

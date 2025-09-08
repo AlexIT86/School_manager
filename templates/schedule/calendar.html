@@ -317,6 +317,18 @@
     <!-- day-cell elements get appended dynamically -->
 </div>
 
+<div class="calendar-nav mt-3 d-none" id="monthNav">
+    <div class="btn-group">
+        <button class="btn btn-outline-secondary" id="prevMonthBtn"><i class="fas fa-chevron-left"></i></button>
+        <button class="btn btn-outline-secondary" id="nextMonthBtn"><i class="fas fa-chevron-right"></i></button>
+    </div>
+    <div>
+        <span class="text-muted">Luna: {{ month_current|default:now|date:"m" }}/{{ year_current|default:now|date:"Y" }}</span>
+    </div>
+    <div class="text-muted small">Sfaturi: swipe orizontal pe mobil pentru grilă.</div>
+    
+</div>
+
 </div>
 
 <!-- Add Entry Modal -->
