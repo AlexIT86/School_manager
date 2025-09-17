@@ -186,7 +186,7 @@ def grades_list_view(request):
         'current_sort': sort_by,
     }
 
-    return render(request, 'grades/grades_list.html', context)
+    return render(request, 'grades/grade_list.html', context)
 
 
 @login_required
@@ -766,13 +766,23 @@ def quick_grade_entry(request):
 
 @login_required
 def absence_excuse_view(request, grade_id):
-    """Motivează o absență"""
+    """Motivează o absență (cu motiv)"""
     grade = get_object_or_404(Grade, id=grade_id, user=request.user, tip='absenta')
 
     if request.method == 'POST':
+        motiv = (request.POST.get('motiv') or '').strip()
+        if not motiv:
+            messages.error(request, 'Te rugăm să introduci motivul absenței.')
+            return render(request, 'grades/excuse_absence.html', {'grade': grade, 'motiv': ''})
+
         grade.motivata = True
         grade.tip = 'absenta_motivata'
         grade.data_motivare = date.today()
+        # Salvează motivul în note_personale (păstrând ce exista)
+        existing = (grade.note_personale or '').strip()
+        prefix = 'Motivare: '
+        new_note = f"{existing}\n{prefix}{motiv}" if existing else f"{prefix}{motiv}"
+        grade.note_personale = new_note[:500]  # scurtăm la max 500 pentru UI
         grade.save()
 
         messages.success(request, 'Absența a fost motivată!')
@@ -787,6 +797,7 @@ def absence_excuse_view(request, grade_id):
 
     context = {
         'grade': grade,
+        'motiv': '',
     }
 
     return render(request, 'grades/excuse_absence.html', context)

@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block title %}Motivează absența - {{ grade.subject.nume }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-7">
+      <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">Motivează absența</h5>
+        </div>
+        <div class="card-body">
+          <p>
+            Ești pe cale să marchezi această absență ca <strong>motivată</strong>.
+          </p>
+          <ul class="list-unstyled mb-3">
+            <li><strong>Materia:</strong> {{ grade.subject.nume }}</li>
+            <li><strong>Data:</strong> {{ grade.data|date:"d.m.Y" }}</li>
+            <li><strong>Status curent:</strong> {{ grade.get_tip_display }}</li>
+          </ul>
+
+          <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+              <label class="form-label">Motivul absenței</label>
+              <textarea name="motiv" class="form-control" rows="3" placeholder="ex: Consultație medicală, concurs, motiv familial">{{ motiv }}</textarea>
+            </div>
+            <div class="d-flex justify-content-between">
+              <a href="{% url 'grades:detail' grade.id %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Înapoi
+              </a>
+              <button type="submit" class="btn btn-success">
+                <i class="fas fa-check me-1"></i>Motivează absența
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
