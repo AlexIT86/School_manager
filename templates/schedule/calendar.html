@@ -19,7 +19,7 @@
             <p class="text-muted mb-0">
                 Săptămâna {{ week_info.start|date:"d.m.Y" }} - {{ week_info.end|date:"d.m.Y" }}
                 {% if week_info.current_day %}
-                • Astăzi este {{ weekdays|slice:week_info.current_day|first }}
+                • Astăzi este {{ weekdays|slice:week_info.current_day|last }}
                 {% endif %}
             </p>
         </div>
