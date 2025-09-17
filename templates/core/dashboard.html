@@ -5,12 +5,23 @@
 
 {% block extra_css %}
 <link href="{% static 'css/dashboard.css' %}?v=2" rel="stylesheet">
+<style>
+.formulas-banner{background:linear-gradient(135deg,#f8f9ff 0%,#eef3ff 100%);border:1px solid #e9ecef;border-radius:14px;padding:16px 18px;position:relative;overflow:hidden}
+.formulas-title{font-weight:700;color:#2c3e50;margin-right:10px;white-space:nowrap}
+.formula-card{border-left:4px solid #6f8ef6;background:#fff;border-radius:10px;padding:12px 14px;box-shadow:0 4px 12px rgba(0,0,0,.05)}
+.formula-head{font-weight:700;color:#223;display:flex;align-items:center;gap:8px}
+.formula-body{color:#495057;margin-top:6px}
+.formula-example{margin-top:6px;color:#6c757d}
+.formula-terms{margin:8px 0 0 0;color:#445;white-space:pre-line}
+.formula-nav .btn{min-width:36px}
+@media (max-width:768px){.formulas-banner{padding:12px}.formula-body{font-size:.95rem}}
+</style>
 {% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
     <!-- Welcome Header -->
-    <div class="row mb-4">
+    <div class="row mb-3">
         <div class="col-12">
             <div class="welcome-header">
                 <h1 class="h3 mb-2">
@@ -22,6 +33,33 @@
                     {% if weekday_name %} • {{ weekday_name }}{% endif %}
                     {% if profile.clasa %} • Clasa {{ profile.clasa }}{% endif %}
                 </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rotating Formulas Banner -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="formulas-banner">
+                <div class="d-flex align-items-start gap-3">
+                    <div class="formulas-title"><i class="fas fa-square-root-alt text-primary me-2"></i>Formule utile</div>
+                    <div class="flex-grow-1">
+                        <div id="formulaCard" class="formula-card">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="me-2">
+                                    <div class="formula-head" id="formulaTitle">—</div>
+                                    <div class="formula-body" id="formulaBody">—</div>
+                                    <div class="formula-terms" id="formulaTerms"></div>
+                                    <div class="formula-example small" id="formulaExample"></div>
+                                </div>
+                                <div class="formula-nav d-flex flex-column gap-2">
+                                    <button class="btn btn-sm btn-outline-primary" id="prevFormula" title="Formula anterioară"><i class="fas fa-chevron-up"></i></button>
+                                    <button class="btn btn-sm btn-primary" id="nextFormula" title="Următoarea formulă"><i class="fas fa-chevron-down"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -410,4 +448,128 @@ setTimeout(() => {
     location.reload();
 }, 300000);
 </script>
+
+<script>
+(function(){
+  // Listă completă (fără numerotare) – titlu, formulă, termeni, exemplu
+  const items = [
+    // Algebră și Aritmetică
+    {t:'Ecuația de gradul întâi', b:'ax + b = 0', terms:[
+      'a = coeficientul lui x (numărul din fața lui x)',
+      'x = necunoscuta (numărul pe care îl căutăm)',
+      'b = termenul liber (numărul fără x)'
+    ], e:'Exemplu: 2x + 6 = 0 → x = -3'},
+    {t:'Proporția', b:'a/b = c/d (⇔ ad = bc)', terms:[
+      'a, b, c, d = termenii proporției',
+      'a și d = extremii, b și c = mijlocii'
+    ], e:'Exemplu: 3/6 = x/12 → x = 6'},
+    {t:'Calculul procentului', b:'a% din b = (a × b) / 100', terms:[
+      'a = procentul',
+      'b = numărul din care calculăm procentul'
+    ], e:'Exemplu: 25% din 200 = 50'},
+    {t:'Media aritmetică', b:'M = (a₁ + a₂ + … + aₙ) / n', terms:[
+      'M = valoarea medie',
+      'n = numărul de valori'
+    ], e:'Exemplu: (8 + 6 + 10)/3 = 8'},
+    {t:'Identitate notabilă (a + b)²', b:'(a + b)² = a² + 2ab + b²', terms:[
+      'a, b = numere reale',
+      '² = la pătrat'
+    ], e:'Exemplu: (3 + 2)² = 25'},
+    {t:'Identitate notabilă (a - b)²', b:'(a - b)² = a² - 2ab + b²', terms:[
+      'a, b = numere reale'
+    ], e:'Exemplu: (5 - 2)² = 9'},
+    {t:'Produsul sumei și diferenței', b:'(a + b)(a - b) = a² - b²', terms:[
+      'diferență de pătrate'
+    ], e:'Exemplu: (4 + 3)(4 - 3) = 7'},
+    {t:'Rădăcina pătrată', b:'√a² = |a|', terms:[
+      '√ = radical',
+      '|a| = modulul lui a'
+    ], e:'Exemplu: √(-3)² = 3'},
+
+    // Geometrie plană
+    {t:'Aria dreptunghiului', b:'A = L × l', terms:['A în cm²/m²','L = lungimea, l = lățimea'], e:'Exemplu: 8 × 5 = 40 cm²'},
+    {t:'Perimetrul dreptunghiului', b:'P = 2(L + l)', terms:['P în cm/m'], e:'Exemplu: 2(6 + 4) = 20 cm'},
+    {t:'Aria pătratului', b:'A = a²', terms:['a = latura pătratului'], e:'Exemplu: 7² = 49 cm²'},
+    {t:'Perimetrul pătratului', b:'P = 4a', terms:['4 = număr de laturi'], e:'Exemplu: 4 × 5 = 20 cm'},
+    {t:'Aria cercului', b:'A = πr²', terms:['π ≈ 3,14','r = raza'], e:'Exemplu: r = 3 → 9π ≈ 28,26 cm²'},
+    {t:'Perimetrul cercului (circumferință)', b:'P = 2πr', terms:['π ≈ 3,14','r = raza'], e:'Exemplu: r = 4 → 8π ≈ 25,12 cm'},
+    {t:'Aria triunghiului', b:'A = (b × h) / 2', terms:['b = baza','h = înălțimea'], e:'Exemplu: (10 × 6)/2 = 30 cm²'},
+    {t:'Teorema lui Pitagora', b:'a² + b² = c²', terms:['a, b = catete','c = ipotenuză'], e:'Exemplu: 3² + 4² = 5²'},
+    {t:'Aria trapezului', b:'A = [(B + b) × h] / 2', terms:['B = baza mare','b = baza mică','h = înălțimea'], e:'Exemplu: (12 × 5)/2 = 30 cm²'},
+    {t:'Diagonala pătratului', b:'d = a√2', terms:['√2 ≈ 1,41'], e:'Exemplu: a = 4 → d ≈ 5,66 cm'},
+
+    // Geometrie în spațiu
+    {t:'Volumul cubului', b:'V = a³', terms:['V în cm³/m³','a = muchia'], e:'Exemplu: 3³ = 27 cm³'},
+    {t:'Aria suprafeței cubului', b:'A = 6a²', terms:['6 = număr de fețe'], e:'Exemplu: 6 × 2² = 24 cm²'},
+    {t:'Volumul paralelipipedului', b:'V = a × b × c', terms:['a = lungime','b = lățime','c = înălțime'], e:'Exemplu: 4 × 3 × 2 = 24 cm³'},
+    {t:'Volumul cilindrului', b:'V = πr²h', terms:['r = raza bazei','h = înălțimea'], e:'Exemplu: r = 2, h = 5 → 20π cm³'},
+    {t:'Volumul sferei', b:'V = (4πr³) / 3', terms:['π ≈ 3,14','4/3 ≈ 1,33'], e:'Exemplu: r = 3 → 36π cm³'},
+
+    // Mecanică (Fizică)
+    {t:'Viteza', b:'v = d / t', terms:['v în m/s sau km/h','d = distanța','t = timpul'], e:'Exemplu: 120 km / 2 h = 60 km/h'},
+    {t:'Accelerația', b:'a = Δv / Δt', terms:['Δv = schimbarea vitezei','a în m/s²'], e:'Exemplu: 20 m/s în 4 s → 5 m/s²'},
+    {t:'Ecuația cinematică', b:'s = v₀t + (at²)/2', terms:['s = spațiul parcurs','v₀ = viteza inițială','a = accelerația'], e:'Exemplu: 10·3 + (2·9)/2 = 39 m'},
+    {t:'Forța (Newton II)', b:'F = m · a', terms:['F în N','m în kg','a în m/s²'], e:'Exemplu: 5 kg · 3 m/s² = 15 N'},
+    {t:'Greutatea', b:'G = m · g', terms:['g ≈ 9,8 m/s² (≈ 10 m/s²)'], e:'Exemplu: 10 kg → ~98 N'},
+    {t:'Densitatea', b:'ρ = m / V', terms:['ρ în kg/m³ sau g/cm³'], e:'Exemplu: 500 g / 250 cm³ = 2 g/cm³'},
+    {t:'Presiunea', b:'p = F / A', terms:['p în Pa'], e:'Exemplu: 200 N / 4 m² = 50 Pa'},
+    {t:'Presiunea hidrostatică', b:'p = ρ g h', terms:['ρ = densitate','g = gravitație','h = adâncime'], e:'Exemplu: 1000·10·3 = 30000 Pa'},
+    {t:'Lucrul mecanic', b:'L = F · d', terms:['L în J'], e:'Exemplu: 50 N · 10 m = 500 J'},
+    {t:'Puterea', b:'P = L / t', terms:['P în W (wați)'], e:'Exemplu: 600 J / 20 s = 30 W'},
+    {t:'Energia cinetică', b:'Ec = (m v²)/2', terms:['Ec în J'], e:'Exemplu: 4·10²/2 = 200 J'},
+    {t:'Energia potențială gravitațională', b:'Ep = m g h', terms:['Ep în J'], e:'Exemplu: 2·10·5 = 100 J'},
+
+    // Căldură / Termodinamică
+    {t:'Conversia Celsius-Kelvin', b:'T(K) = T(°C) + 273', terms:['Kelvin = scară absolută'], e:'Exemplu: 27°C → 300 K'},
+    {t:'Dilatarea liniară', b:'Δl = l₀ · α · Δt', terms:['l₀ = lungimea inițială','α = coeficient material','Δt = variația de temperatură'], e:'Exemplu: 100 cm · 0,000012/°C · 50°C → 0,06 cm'},
+    {t:'Căldura specifică', b:'Q = m c Δt', terms:['Q în J','c = căldură specifică'], e:'Exemplu: 2 kg · 4200 · 10°C = 84000 J'},
+
+    // Electricitate
+    {t:'Legea lui Ohm', b:'U = I · R', terms:['U în V','I în A','R în Ω'], e:'Exemplu: 2 A · 15 Ω = 30 V'},
+    {t:'Puterea electrică', b:'P = U · I', terms:['P în W'], e:'Exemplu: 220 V · 5 A = 1100 W'},
+    {t:'Energia electrică', b:'W = P · t', terms:['W în Wh/kWh'], e:'Exemplu: 1000 W · 2 h = 2 kWh'},
+    {t:'Rezistențe în serie', b:'R = R₁ + R₂ + R₃', terms:['R totală = sumă'], e:'Exemplu: 10 + 20 + 15 = 45 Ω'},
+    {t:'Legea lui Joule', b:'Q = I² R t', terms:['Q în J'], e:'Exemplu: 3² · 8 · 60 = 4320 J'},
+
+    // Optică & Oscilatorii
+    {t:'Legea reflexiei', b:'Unghiul de incidență = unghiul de reflexie', terms:['măsurate față de normală'], e:'Exemplu: 30° → 30°'},
+    {t:'Indice de refracție', b:'n = c / v', terms:['c = 3·10⁸ m/s'], e:'Exemplu: v = 2·10⁸ → n = 1,5'},
+    {t:'Legea refracției (Snell)', b:'n₁ sin α₁ = n₂ sin α₂', terms:['n₁,n₂ = indici de refracție'], e:'Exemplu: n₁=1, α₁=30°, n₂=1,5 → α₂≈19°'},
+    {t:'Perioada pendulului', b:'T = 2π√(l/g)', terms:['T în s (perioada)','π ≈ 3,14','l = lungimea pendulului','g = accelerația gravitațională'], e:'Exemplu: l=1 m, g≈10 → T≈2 s'},
+    {t:'Frecvența', b:'f = 1 / T', terms:['f în Hz'], e:'Exemplu: T=0,5 s → f=2 Hz'},
+    {t:'Viteza undei', b:'v = λ f', terms:['λ = lungimea de undă','f = frecvența'], e:'Exemplu: 2 m · 5 Hz = 10 m/s'},
+    {t:'Randamentul', b:'η = (Lutilizat / Lconsumat) · 100%', terms:['η în procente'], e:'Exemplu: 800/1000 → 80%'}
+  ];
+
+  let idx = Math.floor(Math.random()*items.length);
+  let timer = null;
+
+  function render(){
+    const elT = document.getElementById('formulaTitle');
+    const elB = document.getElementById('formulaBody');
+    const elE = document.getElementById('formulaExample');
+    const elTerms = document.getElementById('formulaTerms');
+    if(!elT||!elB||!elE||!elTerms) return;
+    const it = items[idx];
+    // Format cerut: Titlu: Formula
+    elT.textContent = `${it.t}: ${it.b}`;
+    elB.textContent = '';
+    elTerms.textContent = (it.terms||[]).join('\n');
+    elE.textContent = it.e || '';
+  }
+
+  function next(){ idx = (idx+1) % items.length; render(); restart(); }
+  function prev(){ idx = (idx-1+items.length) % items.length; render(); restart(); }
+  function restart(){ if(timer) clearInterval(timer); timer = setInterval(next, 10000); }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    render();
+    timer = setInterval(next, 10000);
+    const nbtn = document.getElementById('nextFormula'); if(nbtn) nbtn.addEventListener('click', next);
+    const pbtn = document.getElementById('prevFormula'); if(pbtn) pbtn.addEventListener('click', prev);
+  });
+})();
+</script>
+
+{{ block.super }}
 {% endblock %}
