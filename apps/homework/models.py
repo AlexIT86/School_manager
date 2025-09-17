@@ -4,6 +4,7 @@ from django.utils import timezone
 from datetime import date, timedelta
 from apps.subjects.models import Subject
 import os
+from apps.schedule.models import ClassRoom
 
 
 def homework_file_upload_path(instance, filename):
@@ -63,6 +64,21 @@ class Homework(models.Model):
     finalizata = models.BooleanField(default=False)
     data_finalizare = models.DateTimeField(blank=True, null=True)
 
+    # Sharing
+    share_with_class = models.BooleanField(
+        default=False,
+        help_text="Dacă este activat, tema va fi vizibilă tuturor elevilor din clasa setată în profilul tău."
+    )
+    shared_class_room = models.ForeignKey(
+        ClassRoom,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='shared_homeworks',
+        help_text="Clasa cu care este partajată tema"
+    )
+    shared_at = models.DateTimeField(blank=True, null=True)
+
     # Reminder
     reminder_activ = models.BooleanField(default=True)
     zile_reminder = models.PositiveIntegerField(
@@ -92,6 +108,21 @@ class Homework(models.Model):
             self.data_finalizare = timezone.now()
         elif not self.finalizata:
             self.data_finalizare = None
+
+        # Configurează câmpurile de share
+        if self.share_with_class:
+            if not self.shared_class_room:
+                try:
+                    profile = self.user.student_profile
+                    if getattr(profile, 'class_room', None):
+                        self.shared_class_room = profile.class_room
+                except Exception:
+                    pass
+            if self.shared_at is None:
+                self.shared_at = timezone.now()
+        else:
+            # Dacă se dezactivează share, păstrează auditul (shared_at), dar scoate clasa
+            self.shared_class_room = self.shared_class_room if self.shared_class_room else None
 
         super().save(*args, **kwargs)
 

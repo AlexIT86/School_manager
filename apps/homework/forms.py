@@ -14,7 +14,8 @@ class HomeworkForm(forms.ModelForm):
         fields = [
             'subject', 'titlu', 'descriere', 'pagini', 'exercitii',
             'data_primita', 'deadline', 'prioritate', 'dificultate',
-            'timp_estimat', 'reminder_activ', 'zile_reminder', 'note_personale'
+            'timp_estimat', 'reminder_activ', 'zile_reminder', 'note_personale',
+            'share_with_class'
         ]
         labels = {
             'subject': 'Materia',
@@ -30,6 +31,7 @@ class HomeworkForm(forms.ModelForm):
             'reminder_activ': 'Activează reminder',
             'zile_reminder': 'Cu câte zile înainte să anunțe',
             'note_personale': 'Notițe personale',
+            'share_with_class': 'Partajează cu clasa mea',
         }
         widgets = {
             'subject': forms.Select(attrs={
@@ -90,6 +92,9 @@ class HomeworkForm(forms.ModelForm):
                 'class': 'form-control',
                 'rows': 3,
                 'placeholder': 'Notițe personale despre această temă...'
+            }),
+            'share_with_class': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
             }),
         }
 

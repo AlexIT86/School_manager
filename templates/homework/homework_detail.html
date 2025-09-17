@@ -12,8 +12,24 @@
           <span class="badge bg-light text-dark">{{ homework.subject.nume }}</span>
         </div>
         <div class="card-body">
+          {% if homework.share_with_class and homework.shared_class_room %}
+          <div class="mb-2">
+            <span class="badge bg-info text-dark"><i class="fas fa-share-alt me-1"></i>Partajată</span>
+          </div>
+          {% endif %}
           {% if homework.descriere %}
           <p class="mb-3">{{ homework.descriere }}</p>
+          {% endif %}
+
+          {% if homework.share_with_class and homework.shared_class_room %}
+          <div class="alert alert-info d-flex justify-content-between align-items-center">
+            <div>
+              <i class="fas fa-share-alt me-2"></i>
+              Partajată cu clasa <strong>{{ homework.shared_class_room.nume }}</strong> de
+              <strong>{{ homework.user.get_full_name|default:homework.user.username }}</strong>
+              <span class="text-muted">• {{ homework.shared_at|date:'d.m.Y H:i' }}</span>
+            </div>
+          </div>
           {% endif %}
 
           <div class="row g-3">

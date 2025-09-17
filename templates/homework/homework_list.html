@@ -366,16 +366,25 @@
                                     <span class="badge" style="background-color: {{ homework.subject.culoare }}20; color: {{ homework.subject.culoare }};" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="{{ homework.subject.nume }}">
                                         {{ homework.subject.nume }}
                                     </span>
+                                    {% if homework.share_with_class and homework.shared_class_room %}
+                                    <span class="badge bg-info text-dark ms-1">
+                                        <i class="fas fa-share-alt me-1"></i>Partajată
+                                    </span>
+                                    {% endif %}
                                 </div>
                                 
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" 
-                                           {% if homework.finalizata %}checked{% endif %}
-                                           onchange="toggleHomework({{ homework.id }})"
-                                           id="hw-{{ homework.id }}">
-                                    <label class="form-check-label" for="hw-{{ homework.id }}">
-                                        {% if homework.finalizata %}Finalizată{% else %}Marchează ca finalizată{% endif %}
-                                    </label>
+                                <div>
+                                    {% if homework.user_id == request.user.id %}
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" 
+                                               {% if homework.finalizata %}checked{% endif %}
+                                               onchange="toggleHomework({{ homework.id }})"
+                                               id="hw-{{ homework.id }}">
+                                        <label class="form-check-label" for="hw-{{ homework.id }}">
+                                            {% if homework.finalizata %}Finalizată{% else %}Marchează ca finalizată{% endif %}
+                                        </label>
+                                    </div>
+                                    {% endif %}
                                 </div>
                             </div>
                             
@@ -384,6 +393,13 @@
                             </p>
                             
                             <div class="homework-meta">
+                                {% if homework.share_with_class and homework.shared_class_room %}
+                                <span>
+                                    <i class="fas fa-share-alt me-1"></i>
+                                    Partajată de <strong>{{ homework.user.get_full_name|default:homework.user.username }}</strong>
+                                    <span class="text-muted">• {{ homework.shared_at|date:'d.m.Y H:i' }}</span>
+                                </span>
+                                {% endif %}
                                 <span>
                                     <i class="fas fa-calendar-alt me-1"></i>
                                     <strong style="color: {{ homework.culoare_urgenta }};" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Deadline: {{ homework.deadline|date:'d.m.Y' }}">
@@ -425,24 +441,41 @@
                                     <i class="fas fa-eye me-1"></i>Vezi
                                 </a>
                                 
+                                {% if homework.user_id == request.user.id %}
                                 <a href="{% url 'homework:edit' homework.id %}" 
                                    class="btn btn-outline-secondary btn-sm">
                                     <i class="fas fa-edit me-1"></i>Editează
                                 </a>
+                                {% endif %}
                                 
-                                {% if not homework.finalizata %}
+                                {% if homework.user_id == request.user.id and not homework.finalizata %}
                                 <button class="btn btn-outline-success btn-sm" 
                                         onclick="startSession({{ homework.id }})">
                                     <i class="fas fa-play me-1"></i>Începe lucrul
                                 </button>
                                 {% endif %}
                                 
+                                {% if homework.user_id == request.user.id %}
                                 <div class="dropdown">
                                     <button class="btn btn-outline-secondary btn-sm dropdown-toggle" 
                                             type="button" data-bs-toggle="dropdown">
                                         <i class="fas fa-ellipsis-v"></i>
                                     </button>
                                     <ul class="dropdown-menu">
+                                        {% if homework.user_id == request.user.id %}
+                                        <li>
+                                            <form method="post" action="{% url 'homework:edit' homework.id %}" class="px-3 py-2">
+                                                {% csrf_token %}
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" name="share_with_class" id="share-{{ homework.id }}" {% if homework.share_with_class %}checked{% endif %} onchange="this.form.submit()">
+                                                    <label class="form-check-label" for="share-{{ homework.id }}">
+                                                        <i class="fas fa-share-alt me-2"></i>Share cu clasa
+                                                    </label>
+                                                </div>
+                                            </form>
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        {% endif %}
                                         <li>
                                             <a class="dropdown-item" href="{% url 'homework:file_upload' homework.id %}">
                                                 <i class="fas fa-upload me-2"></i>Încarcă fișier
@@ -462,6 +495,7 @@
                                         </li>
                                     </ul>
                                 </div>
+                                {% endif %}
                             </div>
                         </div>
                     </div>

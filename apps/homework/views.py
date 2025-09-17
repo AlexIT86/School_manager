@@ -31,8 +31,14 @@ def homework_list_view(request):
     # Form pentru filtrare
     filter_form = HomeworkFilterForm(user=user, data=request.GET)
 
-    # Queryset de bază
-    homework_list = Homework.objects.filter(user=user)
+    # Queryset de bază: ale mele + share-uite de colegi din aceeași clasă (dacă există)
+    try:
+        class_room = getattr(user.student_profile, 'class_room', None)
+    except Exception:
+        class_room = None
+    homework_list = Homework.objects.filter(
+        Q(user=user) | Q(share_with_class=True, shared_class_room=class_room)
+    )
 
     # Aplicare filtre din form
     if filter_form.is_valid():
@@ -116,7 +122,18 @@ def homework_list_view(request):
 @login_required
 def homework_detail_view(request, homework_id):
     """Detalii despre o temă specifică"""
-    homework = get_object_or_404(Homework, id=homework_id, user=request.user)
+    # Permite acces dacă e tema mea sau e share-uită cu clasa mea
+    try:
+        class_room = getattr(request.user.student_profile, 'class_room', None)
+    except Exception:
+        class_room = None
+    homework = get_object_or_404(
+        Homework.objects.select_related('subject', 'user'),
+        id=homework_id
+    )
+    if homework.user_id != request.user.id:
+        if not (homework.share_with_class and class_room and homework.shared_class_room_id == getattr(class_room, 'id', None)):
+            return redirect('homework:list')
 
     # Fișiere atașate
     files = homework.files.order_by('-uploaded_at')
