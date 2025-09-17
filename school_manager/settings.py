@@ -17,6 +17,11 @@ ALLOWED_HOSTS = [
     config('RENDER_EXTERNAL_HOSTNAME', default=''),
 ]
 
+# CSRF trusted origin pentru Render
+_render_host = config('RENDER_EXTERNAL_HOSTNAME', default='')
+if _render_host:
+    CSRF_TRUSTED_ORIGINS = [f"https://{_render_host}"]
+
 # Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -66,10 +71,14 @@ TEMPLATES = [
 WSGI_APPLICATION = 'school_manager.wsgi.application'
 
 # Database
+# Persistent paths (pentru Render)
+DJANGO_DB_PATH = config('DJANGO_DB_PATH', default=str(BASE_DIR / 'db.sqlite3'))
+MEDIA_ROOT_ENV = config('MEDIA_ROOT_DIR', default='')
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': DJANGO_DB_PATH,
     }
 }
 
@@ -107,7 +116,17 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Media files (uploaded files)
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = Path(MEDIA_ROOT_ENV) if MEDIA_ROOT_ENV else (BASE_DIR / 'media')
+
+# Creează directoarele persistente dacă lipsesc
+try:
+    Path(DATABASES['default']['NAME']).parent.mkdir(parents=True, exist_ok=True)
+except Exception:
+    pass
+try:
+    Path(MEDIA_ROOT).mkdir(parents=True, exist_ok=True)
+except Exception:
+    pass
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
