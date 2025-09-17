@@ -3,6 +3,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator, FileExt
 from datetime import date
 from .models import Grade, Semester, GradeGoal
 from apps.subjects.models import Subject
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
 
 class GradeForm(forms.ModelForm):
@@ -120,6 +121,20 @@ class GradeForm(forms.ModelForm):
                 'icon': 'fas fa-sticky-note'
             }
         ]
+
+    def clean_valoare(self):
+        raw = self.data.get('valoare')
+        if raw in (None, ''):
+            return self.cleaned_data.get('valoare')
+        raw = str(raw).replace(',', '.')
+        try:
+            dec = Decimal(raw)
+        except (InvalidOperation, ValueError):
+            raise forms.ValidationError('Introduceți o valoare numerică validă (ex: 8.50 sau 10).')
+        dec = dec.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        if dec < Decimal('1.00') or dec > Decimal('10.00'):
+            raise forms.ValidationError('Nota trebuie să fie între 1.00 și 10.00.')
+        return dec
 
     def clean(self):
         """Validări custom"""

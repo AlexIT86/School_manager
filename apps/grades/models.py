@@ -202,8 +202,8 @@ class SubjectGradeStats(models.Model):
     numar_intarzieri = models.PositiveIntegerField(default=0)
 
     # Note speciale
-    nota_maxima = models.DecimalField(max_digits=3, decimal_places=2, null=True, blank=True)
-    nota_minima = models.DecimalField(max_digits=3, decimal_places=2, null=True, blank=True)
+    nota_maxima = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True)
+    nota_minima = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True)
 
     # Progres în timp
     tendinta = models.CharField(
@@ -325,7 +325,7 @@ class GradeGoal(models.Model):
 
     # Obiectivul
     media_dorita = models.DecimalField(
-        max_digits=3,
+        max_digits=4,
         decimal_places=2,
         validators=[MinValueValidator(1.0), MaxValueValidator(10.0)],
         help_text="Media dorită pentru această materie"
