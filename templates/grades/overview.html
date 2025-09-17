@@ -6,13 +6,14 @@
 {% block extra_css %}
 <style>
 .grades-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    background: #f8f9fa;
+    color: #2c3e50;
     border-radius: 20px;
     padding: 2rem;
     margin-bottom: 2rem;
     position: relative;
     overflow: hidden;
+    border: 1px solid #e9ecef;
 }
 
 .grades-header::before {
@@ -27,11 +28,11 @@
 }
 
 .semester-info {
-    background: rgba(255, 255, 255, 0.1);
+    background: #ffffff;
     border-radius: 15px;
     padding: 1rem;
     margin-top: 1rem;
-    backdrop-filter: blur(10px);
+    border: 1px solid #e9ecef;
 }
 
 .stats-grid {
@@ -355,7 +356,7 @@
                     <a href="{% url 'grades:create' %}" class="btn btn-light">
                         <i class="fas fa-plus me-2"></i>Adaugă notă
                     </a>
-                    <a href="{% url 'grades:stats' %}" class="btn btn-outline-light">
+                    <a href="{% url 'grades:stats' %}" class="btn btn-outline-primary">
                         <i class="fas fa-chart-bar me-2"></i>Statistici
                     </a>
                 </div>
@@ -498,7 +499,7 @@
             {% if recent_grades %}
             <div class="recent-grades">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h6 class="mb-0">
+                    <h6 class="mb-0" style="color:#2c3e50;">
                         <i class="fas fa-star me-2 text-warning"></i>
                         Note recente
                     </h6>
