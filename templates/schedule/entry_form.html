@@ -13,21 +13,25 @@
                 <div class="card-body">
                     <form method="post" novalidate>
                         {% csrf_token %}
-                        {{ form.non_field_errors }}
 
-                        <div class="row g-3">
-                            <div class="col-md-6">{{ form.subject.label_tag }} {{ form.subject }}</div>
-                            <div class="col-md-3">{{ form.zi_saptamana.label_tag }} {{ form.zi_saptamana }}</div>
-                            <div class="col-md-3">{{ form.numar_ora.label_tag }} {{ form.numar_ora }}</div>
+                        {# Erori generale de formular #}
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+                        {% endif %}
 
-                            <div class="col-md-6">{{ form.ora_inceput.label_tag }} {{ form.ora_inceput }}</div>
-                            <div class="col-md-6">{{ form.ora_sfarsit.label_tag }} {{ form.ora_sfarsit }}</div>
-
-                            <div class="col-md-6">{{ form.sala.label_tag }} {{ form.sala }}</div>
-                            <div class="col-md-6">{{ form.tip_ora.label_tag }} {{ form.tip_ora }}</div>
-
-                            <div class="col-12">{{ form.note.label_tag }} {{ form.note }}</div>
+                        {# Randare generică a tuturor câmpurilor cu erori sub fiecare #}
+                        {% for field in form %}
+                        <div class="mb-3">
+                            {{ field.label_tag }}
+                            {{ field }}
+                            {% if field.help_text %}
+                            <div class="form-text">{{ field.help_text }}</div>
+                            {% endif %}
+                            {% if field.errors %}
+                            <div class="text-danger small">{{ field.errors|striptags }}</div>
+                            {% endif %}
                         </div>
+                        {% endfor %}
 
                         <div class="d-flex justify-content-between mt-4">
                             <a href="{% url 'schedule:calendar' %}" class="btn btn-outline-secondary">

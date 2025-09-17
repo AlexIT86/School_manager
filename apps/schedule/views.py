@@ -20,6 +20,33 @@ from apps.core.models import Notification
 from apps.grades.models import Grade
 
 
+def _propagate_class_entry_to_users(entry: ClassScheduleEntry):
+    """Actualizează/creează intrarea din orar pentru toți elevii din clasa entry.class_room."""
+    try:
+        profiles = entry.class_room.students.select_related('user').all()
+    except Exception:
+        profiles = []
+    for profile in profiles:
+        subject, _ = Subject.objects.get_or_create(
+            user=profile.user,
+            nume=entry.subject_name,
+            defaults={'culoare': entry.subject_color, 'activa': True}
+        )
+        ScheduleEntry.objects.update_or_create(
+            user=profile.user,
+            zi_saptamana=entry.zi_saptamana,
+            numar_ora=entry.numar_ora,
+            defaults={
+                'subject': subject,
+                'ora_inceput': entry.ora_inceput,
+                'ora_sfarsit': entry.ora_sfarsit,
+                'sala': entry.sala,
+                'note': entry.note,
+                'tip_ora': entry.tip_ora,
+            }
+        )
+
+
 @login_required
 def schedule_calendar_view(request):
     """Vedere principală calendar cu orarul săptămânal"""
@@ -888,6 +915,7 @@ def class_schedule_entry_create_view(request, class_id):
             entry = form.save(commit=False)
             entry.class_room = classroom
             entry.save()
+            _propagate_class_entry_to_users(entry)
             messages.success(request, 'Ora a fost adăugată în orarul clasei!')
             return redirect('schedule:class_schedule', class_id=classroom.id)
     else:
@@ -904,7 +932,8 @@ def class_schedule_entry_edit_view(request, class_id, entry_id):
     if request.method == 'POST':
         form = ClassScheduleEntryForm(request.POST, instance=entry)
         if form.is_valid():
-            form.save()
+            entry = form.save()
+            _propagate_class_entry_to_users(entry)
             messages.success(request, 'Ora a fost actualizată!')
             return redirect('schedule:class_schedule', class_id=classroom.id)
     else:
