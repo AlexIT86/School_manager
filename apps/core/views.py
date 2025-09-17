@@ -300,11 +300,25 @@ def dashboard_view(request):
             current_module = (mnum, mstart, mend)
             break
 
+    def count_workdays(d1: date, d2: date) -> int:
+        """Numără zilele lucrătoare (Lun–Vin) între d1 și d2 incluziv capetele.
+        Dacă d2 < d1, returnează 0.
+        """
+        if d2 < d1:
+            return 0
+        days = 0
+        cur = d1
+        while cur <= d2:
+            if cur.weekday() < 5:  # 0=Luni .. 4=Vineri
+                days += 1
+            cur = cur + timedelta(days=1)
+        return days
+
     module_progress = None
     if current_module:
         mnum, mstart, mend = current_module
-        total_days = max(1, (mend - mstart).days)
-        passed_days = max(0, (today - mstart).days)
+        total_days = max(1, count_workdays(mstart, mend))
+        passed_days = count_workdays(mstart, min(today, mend)) if today >= mstart else 0
         percent = min(100, max(0, int(round(passed_days * 100 / total_days))))
         module_progress = {
             'number': mnum,

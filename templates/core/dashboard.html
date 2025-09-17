@@ -165,6 +165,28 @@
             </div>
         </div>
         {% endif %}
+        {% if next_vacation %}
+        <div class="col-md-3">
+            <div class="card stat-card bg-gradient-warning text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="stat-icon me-3">
+                            <i class="fas fa-umbrella-beach fa-2x"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title mb-1 fw-bold text-white" id="vacLwd" style="font-size:1.25rem;">—</h5>
+                            <p class="card-text small text-white-75 mb-0">Până la {{ next_vacation.name }}</p>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <div class="small text-white-75" id="vacationTotals">—</div>
+                        <div class="fw-bold text-white" id="vacationCountdownTotal" style="font-size:1.5rem;">—</div>
+                        <small class="d-block text-white-75"><i class="fas fa-clock me-1"></i>Start: {{ next_vacation.start|date:"d.m.Y" }}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
     </div>
 
     <div class="row">
@@ -316,20 +338,7 @@
 
         <!-- Right Column -->
         <div class="col-lg-4">
-            {% if next_vacation %}
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h6 class="card-title mb-0">
-                        <i class="fas fa-umbrella-beach me-2 text-danger"></i>
-                        Până la {{ next_vacation.name }}
-                    </h6>
-                </div>
-                <div class="card-body">
-                    <div id="vacationCountdown" class="display-6 fw-bold text-center">—</div>
-                    <small class="text-muted d-block text-center">Data start: {{ next_vacation.start|date:"d.m.Y" }}</small>
-                </div>
-            </div>
-            {% endif %}
+            
             <!-- Quick Actions -->
             <div class="card mb-4">
                 <div class="card-header">
@@ -609,9 +618,9 @@ setTimeout(() => {
 </script>
 
 <script>
-// Countdown până la următoarea vacanță (luni/săptămâni/zile/ore/secunde)
+// Countdown până la următoarea vacanță (numai zile lucrătoare)
 document.addEventListener('DOMContentLoaded', function(){
-  const el = document.getElementById('vacationCountdown');
+  const el = document.getElementById('vacLwd');
   if(!el) return;
   const targetStr = '{{ next_vacation.start|date:"Y-m-d" }}T00:00:00';
   const target = new Date(targetStr);
@@ -619,24 +628,60 @@ document.addEventListener('DOMContentLoaded', function(){
     // Simplu: singular/plural (RO): 1 -> one, altfel -> many
     return n === 1 ? one : many;
   }
+  function isWorkday(d){
+    const wd = d.getDay(); // 0=Sun,1=Mon,...6=Sat
+    return wd >= 1 && wd <= 5;
+  }
+  function computeWorkingMs(start, end){
+    if (start >= end) return 0;
+    let ms = 0;
+    let d = new Date(start);
+    while (d < end) {
+      if (!isWorkday(d)) {
+        // sari la începutul zilei următoare
+        const nextDay = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
+        d = nextDay;
+        continue;
+      }
+      const dayEnd = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
+      const segmentEnd = dayEnd < end ? dayEnd : end;
+      ms += (segmentEnd - d);
+      d = segmentEnd;
+    }
+    return ms;
+  }
   function tick(){
     const now = new Date();
-    let diffMs = target - now;
-    if (diffMs <= 0) { el.textContent = 'Vacanța începe!'; return; }
-    const seconds = Math.floor(diffMs/1000);
+    let diffMsWorking = computeWorkingMs(now, target);
+    if (diffMsWorking <= 0) { el.textContent = 'Vacanța începe!'; return; }
+    const seconds = Math.floor(diffMsWorking/1000);
     const minutes = Math.floor(seconds/60);
     const hours   = Math.floor(minutes/60);
-    const days    = Math.floor(hours/24);
+    const days    = Math.floor(hours/24); // zile lucrătoare
     const weeks   = Math.floor(days/7);
     const months  = Math.floor(days/30);
-    const remDays = days % 7;
-    const remHours = hours % 24;
-    const remMinutes = minutes % 60;
-    const remSeconds = seconds % 60;
     const monthsLabel = plural(months, 'lună', 'luni', 'luni');
     const weeksLabel = plural(weeks, 'săptămână', 'săptămâni', 'săptămâni');
     const daysLabel = plural(days, 'zi', 'zile', 'zile');
-    el.textContent = `${months} ${monthsLabel} / ${weeks} ${weeksLabel} / ${days} ${daysLabel} / ${String(remHours).padStart(2,'0')}:${String(remMinutes).padStart(2,'0')}:${String(remSeconds).padStart(2,'0')}`;
+    // Total ore/minute/secunde (doar timp lucrător)
+    const totalHours = Math.max(0, Math.floor(diffMsWorking / (1000*60*60)));
+    const totalMinutes = Math.max(0, Math.floor(diffMsWorking / (1000*60)));
+    const totalSeconds = Math.max(0, Math.floor(diffMsWorking / 1000));
+    // Linia 1 (bold, mare): luni/săpt/zile lucrătoare
+    el.textContent = `${months} ${monthsLabel} / ${weeks} ${weeksLabel} / ${days} ${daysLabel}`;
+    const totalsEl = document.getElementById('vacationTotals');
+    if (totalsEl) {
+      totalsEl.textContent = `${totalHours.toLocaleString('ro-RO')} ore • ${totalMinutes.toLocaleString('ro-RO')} minute • ${totalSeconds.toLocaleString('ro-RO')} secunde`;
+    }
+
+    // Countdown total (HH:MM:SS) scăzând la 00:00:00
+    const totalEl = document.getElementById('vacationCountdownTotal');
+    if (totalEl) {
+      const h = Math.floor((diffMsWorking / (1000*60*60)) % 100000); // cap mare pentru ore multe
+      const m = Math.floor((diffMsWorking / (1000*60)) % 60);
+      const s = Math.floor((diffMsWorking / 1000) % 60);
+      totalEl.textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    }
   }
   tick();
   setInterval(tick, 1000);
