@@ -6,13 +6,19 @@
 {% block extra_css %}
 <style>
 .login-main {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: radial-gradient(circle at 20% 20%, #f4f7ff 0%, #eef3ff 35%, #eaf1ff 60%, #e7f0ff 100%);
     min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 20px;
+    position: relative;
+    overflow: hidden;
 }
+
+.floating-bg { position: absolute; inset: 0; overflow: hidden; z-index: 0; pointer-events: none; }
+.float-char { position: absolute; top: 100%; font-weight: 700; color: rgba(80,120,255,0.12); animation: rise var(--dur,12s) linear infinite; transform: rotate(var(--rot,0deg)) translate(-50%,0); filter: blur(0.3px); user-select: none; }
+@keyframes rise { 0%{ transform: rotate(var(--rot,0deg)) translate(-50%,0); opacity:0 } 8%{opacity:1} 92%{opacity:1} 100%{ transform: rotate(var(--rot,0deg)) translate(-50%,-130vh); opacity:0 } }
 
 .login-card {
     background: rgba(255, 255, 255, 0.95);
@@ -23,6 +29,8 @@
     overflow: hidden;
     max-width: 1000px;
     width: 100%;
+    position: relative;
+    z-index: 1;
 }
 
 .login-left {
@@ -101,6 +109,7 @@
 
 {% block content %}
 <div class="container-fluid login-main">
+    <div class="floating-bg" id="floatingBg"></div>
     <div class="login-card">
         <div class="row g-0">
             <!-- Left Side - Welcome -->
@@ -218,6 +227,31 @@
 
 {% block extra_js %}
 <script>
+// floating characters background
+document.addEventListener('DOMContentLoaded', function() {
+  const bg = document.getElementById('floatingBg');
+  if (!bg) return;
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const count = 60; // mai multe caractere simultane
+  for (let i = 0; i < count; i++) {
+    const span = document.createElement('span');
+    span.className = 'float-char';
+    span.textContent = chars[Math.floor(Math.random() * chars.length)];
+    span.style.left = Math.random() * 100 + '%';
+    span.style.fontSize = (10 + Math.random() * 30) + 'px';
+    span.style.setProperty('--dur', (9 + Math.random() * 14) + 's');
+    span.style.animationDelay = (-Math.random() * 14) + 's';
+    // unghi aleator pentru traiectorie (diagonală)
+    const angle = (Math.random() * 80) - 40; // între -40° și 40°
+    span.style.setProperty('--rot', angle + 'deg');
+    // variație ușoară de culoare/opacitate
+    const opacity = (0.08 + Math.random() * 0.12).toFixed(2);
+    span.style.color = `rgba(80,120,255,${opacity})`;
+    span.style.filter = `blur(${(Math.random()*0.6).toFixed(2)}px)`;
+    bg.appendChild(span);
+  }
+});
+
 // Auto-focus pe primul input
 document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('id_username').focus();

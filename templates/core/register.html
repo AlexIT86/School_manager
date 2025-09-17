@@ -6,10 +6,15 @@
 {% block extra_css %}
 <style>
 .register-main {
-    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    background: radial-gradient(circle at 20% 20%, #f4f7ff 0%, #eef3ff 35%, #eaf1ff 60%, #e7f0ff 100%);
     min-height: 100vh;
     padding: 40px 20px;
+    position: relative;
+    overflow: hidden;
 }
+.floating-bg { position:absolute; inset:0; overflow:hidden; z-index:0; pointer-events:none; }
+.float-char { position:absolute; top:100%; font-weight:700; color:rgba(80,120,255,0.12); animation: rise var(--dur,12s) linear infinite; transform: rotate(var(--rot,0deg)) translate(-50%,0); filter:blur(0.3px); user-select:none; }
+@keyframes rise { 0%{ transform: rotate(var(--rot,0deg)) translate(-50%,0); opacity:0 } 8%{opacity:1} 92%{opacity:1} 100%{ transform: rotate(var(--rot,0deg)) translate(-50%,-130vh); opacity:0 } }
 
 .register-card {
     background: rgba(255, 255, 255, 0.95);
@@ -20,6 +25,8 @@
     overflow: hidden;
     max-width: 800px;
     margin: 0 auto;
+    position: relative;
+    z-index: 1;
 }
 
 .register-header {
@@ -141,6 +148,7 @@
 
 {% block content %}
 <div class="register-main">
+    <div class="floating-bg" id="floatingBg"></div>
     <div class="register-card">
         <!-- Header -->
         <div class="register-header">
@@ -378,6 +386,27 @@
 
 {% block extra_js %}
 <script>
+// floating background for register
+document.addEventListener('DOMContentLoaded', function(){
+  const bg = document.getElementById('floatingBg');
+  if(!bg) return;
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const count = 60;
+  for(let i=0;i<count;i++){
+    const s=document.createElement('span');
+    s.className='float-char';
+    s.textContent=chars[Math.floor(Math.random()*chars.length)];
+    s.style.left = Math.random()*100+'%';
+    s.style.fontSize=(10+Math.random()*30)+'px';
+    s.style.setProperty('--dur',(9+Math.random()*14)+'s');
+    s.style.animationDelay=(-Math.random()*14)+'s';
+    s.style.setProperty('--rot',((Math.random()*80)-40)+'deg');
+    const opacity=(0.08+Math.random()*0.12).toFixed(2);
+    s.style.color=`rgba(80,120,255,${opacity})`;
+    s.style.filter=`blur(${(Math.random()*0.6).toFixed(2)}px)`;
+    bg.appendChild(s);
+  }
+});
 document.addEventListener('DOMContentLoaded', function() {
     const password1 = document.getElementById('id_password1');
     const password2 = document.getElementById('id_password2');
