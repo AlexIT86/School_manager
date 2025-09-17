@@ -34,7 +34,7 @@ class Grade(models.Model):
     # Tipul și valoarea
     tip = models.CharField(max_length=20, choices=GRADE_TYPES)
     valoare = models.DecimalField(
-        max_digits=3,
+        max_digits=4,
         decimal_places=2,
         validators=[MinValueValidator(1.0), MaxValueValidator(10.0)],
         blank=True,
