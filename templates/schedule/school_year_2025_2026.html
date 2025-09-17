@@ -13,7 +13,14 @@
   <!-- Vizualizare calendar colorat (mutat sus) -->
   <div class="card shadow-sm mb-4">
     <div class="card-body">
-      <h5 class="mb-3">Calendar colorat (Septembrie 2025 – Iunie 2026)</h5>
+      <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <h5 class="mb-0">Calendar modular 2025–2026</h5>
+        <div class="d-flex align-items-center gap-2">
+          <label for="countySelect" class="form-label mb-0">Vacanța din februarie (județ)</label>
+          <select id="countySelect" class="form-select form-select-sm" style="min-width: 220px;"></select>
+          <span id="countyInfo" class="text-muted small"></span>
+        </div>
+      </div>
       <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
         <span class="legend"><span class="chip chip-m1"></span> Modulul 1</span>
         <span class="legend"><span class="chip chip-m2"></span> Modulul 2</span>
@@ -24,7 +31,7 @@
         <span class="legend"><span class="chip chip-feb"></span> Vacanță mobilă februarie</span>
       </div>
       <div id="schoolYearCalendar" class="sy-calendar"></div>
-      <small class="text-muted d-block mt-2">Schimbă județul mai jos pentru a ajusta săptămâna de vacanță din februarie (Modulele 3 și 4 se vor reconfigura automat).</small>
+      <small class="text-muted d-block mt-2">Schimbă județul din header pentru a ajusta săptămâna de vacanță din februarie (Modulele 3 și 4 se vor reconfigura automat).</small>
     </div>
   </div>
 
@@ -75,7 +82,7 @@
           <ul class="mb-0">
             <li>Vacanța de toamnă: 25 octombrie – 2 noiembrie 2025</li>
             <li>Vacanța de iarnă: 20 decembrie 2025 – 7 ianuarie 2026</li>
-            <li>Vacanța mobilă din februarie (1 săptămână): între 9 februarie – 1 martie 2026 (vezi mai jos pe județe)</li>
+            <li>Vacanța mobilă din februarie (1 săptămână): între 9 februarie – 1 martie 2026 (vezi distribuția pe județe)</li>
             <li>Vacanța de primăvară: 4 – 14 aprilie 2026 (Paște catolic 5 aprilie, ortodox 12 aprilie)</li>
             <li>Vacanța de vară: 20 iunie – 6 septembrie 2026</li>
           </ul>
@@ -97,21 +104,7 @@
     <div class="col-lg-5">
       <div class="card shadow-sm">
         <div class="card-body">
-          <h5>Vacanța mobilă din februarie – după județ</h5>
-          <div class="mb-3">
-            <label class="form-label">Alege județul</label>
-            <select id="countySelect" class="form-select">
-              <option value="">— Selectează —</option>
-              {% for interval, counties in vacante.februarie_distributie.items %}
-                {% for county in counties %}
-                <option value="{{ interval }}">{{ county }}</option>
-                {% endfor %}
-              {% endfor %}
-            </select>
-          </div>
-          <div class="alert alert-info" id="countyInfo" style="display:none;"></div>
-
-          <h6 class="mt-4">Distribuție pe intervale</h6>
+          <h5>Vacanța mobilă din februarie – distribuție pe județe</h5>
           <ul class="small mb-0">
             {% for interval, counties in vacante.februarie_distributie.items %}
             <li><strong>{{ interval|slice:":10" }} – {{ interval|slice:"11:" }}</strong>: {{ counties|join:', ' }}</li>
@@ -207,7 +200,7 @@
     if(isBetween(d, ...ranges.modules.m2)) return 'm2';
     if(isBetween(d, ...ranges.modules.m5)) return 'm5';
 
-    // Module 3 și 4 depind de febWeek; dacă nu e setat, folosim cel mai tarziu scenariu generic: m3 până pe 20 feb, m4 de pe 2 mar
+    // Module 3 și 4 depind de febWeek; fallback: m3 până pe 20 feb, m4 de pe 2 mar
     const m3Start = ranges.modules.m3[0];
     const m3End = febWeek ? new Date(febWeek[0].getFullYear(), febWeek[0].getMonth(), febWeek[0].getDate()-1) : parse('2026-02-20');
     const m4Start = febWeek ? new Date(febWeek[1].getFullYear(), febWeek[1].getMonth(), febWeek[1].getDate()+1)
@@ -252,16 +245,39 @@
     });
   }
 
+  // Build county dropdown (alphabetically) from server data
+  const FEB_DIST = {
+  {% for interval, counties in vacante.februarie_distributie.items %}
+    '{{ interval }}': [{% for c in counties %}'{{ c }}'{% if not forloop.last %}, {% endif %}{% endfor %}] {% if not forloop.last %},{% endif %}
+  {% endfor %}
+  };
+
+  function populateCountySelect(){
+    const sel = document.getElementById('countySelect');
+    if(!sel) return;
+    sel.innerHTML = '';
+    const ph = document.createElement('option'); ph.value=''; ph.textContent='— Selectează județ —'; sel.appendChild(ph);
+    const pairs = [];
+    Object.entries(FEB_DIST).forEach(([interval, list])=>{
+      list.forEach(county=>pairs.push([county, interval]));
+    });
+    pairs.sort((a,b)=>a[0].localeCompare(b[0],'ro',{sensitivity:'base'}));
+    pairs.forEach(([county, interval])=>{
+      const opt = document.createElement('option');
+      opt.value = interval; opt.textContent = county; sel.appendChild(opt);
+    });
+  }
+
   // Init
+  populateCountySelect();
   renderCalendar();
   const sel = document.getElementById('countySelect');
   const info = document.getElementById('countyInfo');
   if(sel){
     sel.addEventListener('change', function(){
-      if(!this.value){ info.style.display='none'; applyFebWeek(null); renderCalendar(); return; }
+      if(!this.value){ info.textContent=''; applyFebWeek(null); renderCalendar(); return; }
       const [a,b] = this.value.split(':');
-      info.textContent = `Vacanță în județul selectat: ${a} – ${b}`;
-      info.style.display='block';
+      info.textContent = `${a} – ${b}`;
       applyFebWeek(this.value);
       renderCalendar();
     });
