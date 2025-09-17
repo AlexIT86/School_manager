@@ -41,11 +41,22 @@
                             <i class="fas fa-book me-1"></i>Materii
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.app_name == 'schedule' %}active{% endif %}" 
-                           href="{% url 'schedule:calendar' %}">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {% if request.resolver_match.app_name == 'schedule' %}active{% endif %}" href="#" id="scheduleDropdown" role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-calendar me-1"></i>Orar
                         </a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item" href="{% url 'schedule:calendar' %}">
+                                    <i class="fas fa-calendar-week me-2"></i>Calendar
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'schedule:school_year_2025_2026' %}">
+                                    <i class="fas fa-calendar-alt me-2"></i>Structura 2025–2026
+                                </a>
+                            </li>
+                        </ul>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {% if request.resolver_match.app_name == 'homework' %}active{% endif %}" 

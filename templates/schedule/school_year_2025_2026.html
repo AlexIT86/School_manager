@@ -1,0 +1,271 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Structura anului școlar 2025–2026{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0"><i class="fas fa-calendar-alt me-2 text-primary"></i>Structura anului școlar 2025–2026</h3>
+    <a href="{% url 'schedule:calendar' %}" class="btn btn-outline-secondary">Înapoi la Orar</a>
+  </div>
+
+  <!-- Vizualizare calendar colorat (mutat sus) -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <h5 class="mb-3">Calendar colorat (Septembrie 2025 – Iunie 2026)</h5>
+      <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
+        <span class="legend"><span class="chip chip-m1"></span> Modulul 1</span>
+        <span class="legend"><span class="chip chip-m2"></span> Modulul 2</span>
+        <span class="legend"><span class="chip chip-m3"></span> Modulul 3</span>
+        <span class="legend"><span class="chip chip-m4"></span> Modulul 4</span>
+        <span class="legend"><span class="chip chip-m5"></span> Modulul 5</span>
+        <span class="legend"><span class="chip chip-vac"></span> Vacanță</span>
+        <span class="legend"><span class="chip chip-feb"></span> Vacanță mobilă februarie</span>
+      </div>
+      <div id="schoolYearCalendar" class="sy-calendar"></div>
+      <small class="text-muted d-block mt-2">Schimbă județul mai jos pentru a ajusta săptămâna de vacanță din februarie (Modulele 3 și 4 se vor reconfigura automat).</small>
+    </div>
+  </div>
+
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <h5>Informații generale</h5>
+      <ul class="mb-0">
+        <li><strong>Durata:</strong> {{ general.durata_saptamani }} săptămâni de cursuri</li>
+        <li><strong>Perioada:</strong> 8 septembrie 2025 – 19 iunie 2026</li>
+        <li><strong>Structura:</strong> {{ general.structura }}</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <h5>Excepții</h5>
+      <ul class="mb-0">
+        {% for ex in exceptii %}
+        <li>
+          <strong>{{ ex.clase }}</strong>: până la {{ ex.pana_la|default:'conform planurilor-cadru' }}
+          {% if ex.saptamani %} ({{ ex.saptamani }} săptămâni){% endif %}
+          {% if ex.nota %} — {{ ex.nota }}{% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-lg-7">
+      <div class="card shadow-sm mb-4">
+        <div class="card-body">
+          <h5>Module (cursuri)</h5>
+          <ol class="mb-0">
+            <li>Modulul 1: 8 septembrie – 24 octombrie 2025</li>
+            <li>Modulul 2: 3 noiembrie – 19 decembrie 2025</li>
+            <li>Modulul 3: 8 ianuarie – 6/13/20 februarie 2026 (în funcție de județ)</li>
+            <li>Modulul 4: 16/23 februarie sau 2 martie – 3 aprilie 2026 (în funcție de județ)</li>
+            <li>Modulul 5: 15 aprilie – 19 iunie 2026</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="card shadow-sm mb-4">
+        <div class="card-body">
+          <h5>Vacanțe</h5>
+          <ul class="mb-0">
+            <li>Vacanța de toamnă: 25 octombrie – 2 noiembrie 2025</li>
+            <li>Vacanța de iarnă: 20 decembrie 2025 – 7 ianuarie 2026</li>
+            <li>Vacanța mobilă din februarie (1 săptămână): între 9 februarie – 1 martie 2026 (vezi mai jos pe județe)</li>
+            <li>Vacanța de primăvară: 4 – 14 aprilie 2026 (Paște catolic 5 aprilie, ortodox 12 aprilie)</li>
+            <li>Vacanța de vară: 20 iunie – 6 septembrie 2026</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card shadow-sm mb-4">
+        <div class="card-body">
+          <h5>Programe speciale</h5>
+          <ul class="mb-0">
+            <li>„Școala altfel” și „Săptămâna verde”</li>
+            <li>Perioada: 8 septembrie 2025 – 3 aprilie 2026</li>
+            <li>Durata: câte 5 zile lucrătoare consecutive, stabilite de unitatea de învățământ</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-5">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h5>Vacanța mobilă din februarie – după județ</h5>
+          <div class="mb-3">
+            <label class="form-label">Alege județul</label>
+            <select id="countySelect" class="form-select">
+              <option value="">— Selectează —</option>
+              {% for interval, counties in vacante.februarie_distributie.items %}
+                {% for county in counties %}
+                <option value="{{ interval }}">{{ county }}</option>
+                {% endfor %}
+              {% endfor %}
+            </select>
+          </div>
+          <div class="alert alert-info" id="countyInfo" style="display:none;"></div>
+
+          <h6 class="mt-4">Distribuție pe intervale</h6>
+          <ul class="small mb-0">
+            {% for interval, counties in vacante.februarie_distributie.items %}
+            <li><strong>{{ interval|slice:":10" }} – {{ interval|slice:"11:" }}</strong>: {{ counties|join:', ' }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.sy-calendar{display:grid;grid-template-columns:repeat(4,minmax(220px,1fr));gap:16px}
+.sy-month{border:1px solid #e9ecef;border-radius:10px;overflow:hidden}
+.sy-month-header{background:#f8f9fa;padding:8px 12px;font-weight:600}
+.sy-weekdays,.sy-weeks{display:grid;grid-template-columns:repeat(7,1fr)}
+.sy-weekdays div{padding:6px 0;text-align:center;font-size:.8rem;color:#6c757d;background:#fcfcfc;border-bottom:1px solid #f1f3f5}
+.sy-day{min-height:28px;padding:6px 4px;border-right:1px solid #f1f3f5;border-bottom:1px solid #f1f3f5;font-size:.85rem}
+.sy-day:nth-child(7n){border-right:none}
+.sy-day .num{font-weight:600}
+.sy-day.m0{background:#ffffff}
+.sy-day.m1{background:#e8f4ff}
+.sy-day.m2{background:#ecfff1}
+.sy-day.m3{background:#fff6e5}
+.sy-day.m4{background:#f0e9ff}
+.sy-day.m5{background:#e5fff7}
+.sy-day.vac{background:#ffe9ec}
+.sy-day.feb{background:#ffe9cc}
+.sy-day.mute{color:#adb5bd;background:#fafafa}
+.legend{display:flex;align-items:center;gap:6px}
+.chip{display:inline-block;width:14px;height:14px;border-radius:3px;border:1px solid #dee2e6}
+.chip-m1{background:#e8f4ff}
+.chip-m2{background:#ecfff1}
+.chip-m3{background:#fff6e5}
+.chip-m4{background:#f0e9ff}
+.chip-m5{background:#e5fff7}
+.chip-vac{background:#ffe9ec}
+.chip-feb{background:#ffe9cc}
+@media (max-width: 992px){.sy-calendar{grid-template-columns:repeat(2,minmax(220px,1fr))}}
+@media (max-width: 576px){.sy-calendar{grid-template-columns:1fr}}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function(){
+  // Helpers
+  const parse = s => { const [y,m,d]=s.split('-').map(Number); return new Date(y, m-1, d); };
+  const fmtMonthName = (y,m) => new Date(y,m,1).toLocaleDateString('ro-RO',{month:'long', year:'numeric'});
+  const isBetween = (d, a, b) => d >= a && d <= b;
+
+  // Fixed ranges
+  const ranges = {
+    modules: {
+      m1: [parse('2025-09-08'), parse('2025-10-24')],
+      m2: [parse('2025-11-03'), parse('2025-12-19')],
+      m3: [parse('2026-01-08'), null], // end decided by feb week (Fri: 6/13/20)
+      m4: [null, parse('2026-04-03')], // start decided by feb week (Mon: 16/23 Feb sau 2 Mar)
+      m5: [parse('2026-04-15'), parse('2026-06-19')]
+    },
+    vac: {
+      toamna: [parse('2025-10-25'), parse('2025-11-02')],
+      iarna: [parse('2025-12-20'), parse('2026-01-07')],
+      primavara: [parse('2026-04-04'), parse('2026-04-14')],
+      vara: [parse('2026-06-20'), parse('2026-09-06')]
+    },
+    febOptions: [
+      [parse('2026-02-09'), parse('2026-02-15')],
+      [parse('2026-02-16'), parse('2026-02-22')],
+      [parse('2026-02-23'), parse('2026-03-01')]
+    ]
+  };
+
+  // Default: fără selecție județ -> nu colorăm săptămâna feb special; m3/m4 rămân nefixate exact
+  let febWeek = null;
+
+  function applyFebWeek(intervalStr){
+    if(!intervalStr){ febWeek = null; return; }
+    const [a,b] = intervalStr.split(':');
+    febWeek = [parse(a), parse(b)];
+  }
+
+  function computeColorForDate(d){
+    // Vacanțe fixe au prioritate
+    for(const key in ranges.vac){ const [a,b]=ranges.vac[key]; if(isBetween(d,a,b)) return 'vac'; }
+    // Vacanță februarie selectată are prioritate
+    if(febWeek && isBetween(d, febWeek[0], febWeek[1])) return 'feb';
+
+    // Module: m1, m2, m5 fixe
+    if(isBetween(d, ...ranges.modules.m1)) return 'm1';
+    if(isBetween(d, ...ranges.modules.m2)) return 'm2';
+    if(isBetween(d, ...ranges.modules.m5)) return 'm5';
+
+    // Module 3 și 4 depind de febWeek; dacă nu e setat, folosim cel mai tarziu scenariu generic: m3 până pe 20 feb, m4 de pe 2 mar
+    const m3Start = ranges.modules.m3[0];
+    const m3End = febWeek ? new Date(febWeek[0].getFullYear(), febWeek[0].getMonth(), febWeek[0].getDate()-1) : parse('2026-02-20');
+    const m4Start = febWeek ? new Date(febWeek[1].getFullYear(), febWeek[1].getMonth(), febWeek[1].getDate()+1)
+                            : parse('2026-03-02');
+    const m4End = ranges.modules.m4[1];
+
+    if(isBetween(d, m3Start, m3End)) return 'm3';
+    if(isBetween(d, m4Start, m4End)) return 'm4';
+    return 'm0';
+  }
+
+  function renderCalendar(){
+    const root = document.getElementById('schoolYearCalendar');
+    if(!root) return;
+    root.innerHTML = '';
+    // Months: Sep (8) 2025 to Jun (5) 2026
+    const months = [];
+    for(let m=8;m<=11;m++) months.push([2025,m]);
+    for(let m=0;m<=5;m++) months.push([2026,m]);
+
+    months.forEach(([Y,M])=>{
+      const wrap = document.createElement('div');
+      wrap.className = 'sy-month';
+      const head = document.createElement('div'); head.className='sy-month-header'; head.textContent=fmtMonthName(Y,M);
+      const weekdays = document.createElement('div'); weekdays.className='sy-weekdays';
+      ['Lu','Ma','Mi','Jo','Vi','Sâ','Du'].forEach(lbl=>{ const d=document.createElement('div'); d.textContent=lbl; weekdays.appendChild(d); });
+      const weeks = document.createElement('div'); weeks.className='sy-weeks';
+
+      const first = new Date(Y,M,1);
+      const last = new Date(Y,M+1,0);
+      const padStart = (first.getDay()+6)%7; // convert Sun=0 to Sun=6, Mon=0
+      for(let i=0;i<padStart;i++){ const cell=document.createElement('div'); cell.className='sy-day mute'; weeks.appendChild(cell); }
+      for(let day=1; day<=last.getDate(); day++){
+        const d = new Date(Y,M,day);
+        const cell = document.createElement('div');
+        cell.className = 'sy-day ' + computeColorForDate(d);
+        const num = document.createElement('div'); num.className='num'; num.textContent=day; cell.appendChild(num);
+        weeks.appendChild(cell);
+      }
+      wrap.appendChild(head); wrap.appendChild(weekdays); wrap.appendChild(weeks);
+      root.appendChild(wrap);
+    });
+  }
+
+  // Init
+  renderCalendar();
+  const sel = document.getElementById('countySelect');
+  const info = document.getElementById('countyInfo');
+  if(sel){
+    sel.addEventListener('change', function(){
+      if(!this.value){ info.style.display='none'; applyFebWeek(null); renderCalendar(); return; }
+      const [a,b] = this.value.split(':');
+      info.textContent = `Vacanță în județul selectat: ${a} – ${b}`;
+      info.style.display='block';
+      applyFebWeek(this.value);
+      renderCalendar();
+    });
+  }
+})();
+</script>
+{% endblock %}

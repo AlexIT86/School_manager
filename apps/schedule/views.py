@@ -952,3 +952,46 @@ def class_schedule_entry_delete_view(request, class_id, entry_id):
         messages.success(request, 'Ora a fost ștearsă!')
         return redirect('schedule:class_schedule', class_id=classroom.id)
     return render(request, 'schedule/entry_delete.html', {'entry': entry})
+
+
+@login_required
+def school_year_2025_2026_view(request):
+    """Structura anului școlar 2025-2026 (module, vacanțe, excepții)."""
+    context = {
+        'general': {
+            'durata_saptamani': 36,
+            'perioada': ('2025-09-08', '2026-06-19'),
+            'structura': '5 module + 5 vacanțe',
+        },
+        'exceptii': [
+            {'clase': 'Clasa a XII-a zi, a XIII-a seral/frecvență redusă', 'pana_la': '2026-06-05', 'saptamani': 34},
+            {'clase': 'Clasa a VIII-a', 'pana_la': '2026-06-12', 'saptamani': 35},
+            {'clase': 'Liceal filiera tehnologică', 'pana_la': '2026-06-26', 'saptamani': 37},
+            {'clase': 'Postliceal', 'nota': 'Durata conform planurilor-cadru în vigoare'},
+        ],
+        'module': [
+            {'nr': 1, 'inceput': '2025-09-08', 'sfarsit': '2025-10-24'},
+            {'nr': 2, 'inceput': '2025-11-03', 'sfarsit': '2025-12-19'},
+            {'nr': 3, 'inceput': '2026-01-08', 'sfarsit_variant': ['2026-02-06', '2026-02-13', '2026-02-20']},
+            {'nr': 4, 'inceput_variant': ['2026-02-16', '2026-02-23', '2026-03-02'], 'sfarsit': '2026-04-03'},
+            {'nr': 5, 'inceput': '2026-04-15', 'sfarsit': '2026-06-19'},
+        ],
+        'vacante': {
+            'toamna': ('2025-10-25', '2025-11-02'),
+            'iarna': ('2025-12-20', '2026-01-07'),
+            'primavara': ('2026-04-04', '2026-04-14'),
+            'vara': ('2026-06-20', '2026-09-06'),
+            'februarie_mobila_interval': ('2026-02-09', '2026-03-01'),
+            'februarie_distributie': {
+                '2026-02-09:2026-02-15': ['Cluj', 'Timiș', 'Bistrița-Năsăud'],
+                '2026-02-16:2026-02-22': ['București', 'Ilfov', 'Sălaj', 'Bihor', 'Arad', 'Iași', 'Hunedoara', 'Brașov', 'Caraș-Severin', 'Gorj', 'Vâlcea', 'Argeș', 'Dâmbovița', 'Prahova', 'Buzău', 'Tulcea', 'Mehedinți', 'Dolj', 'Olt', 'Teleorman', 'Ialomița', 'Călărași'],
+                '2026-02-23:2026-03-01': ['Satu-Mare', 'Maramureș', 'Suceava', 'Botoșani', 'Alba', 'Sibiu', 'Mureș', 'Harghita', 'Neamț', 'Covasna', 'Bacău', 'Vrancea', 'Vaslui', 'Galați', 'Brăila', 'Giurgiu', 'Constanța'],
+            },
+        },
+        'programe_speciale': {
+            'interval': ('2025-09-08', '2026-04-03'),
+            'durata_zile': 5,
+            'descriere': '"Școala altfel" și "Săptămâna verde" - la decizia unității',
+        },
+    }
+    return render(request, 'schedule/school_year_2025_2026.html', context)
