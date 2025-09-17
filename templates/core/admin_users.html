@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+{% block title %}Administrare utilizatori{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0"><i class="fas fa-users-cog me-2"></i>Administrare utilizatori</h3>
+    <form class="d-flex" method="get">
+      <input class="form-control me-2" type="search" placeholder="Caută utilizator" name="q" value="{{ q }}">
+      <button class="btn btn-outline-primary" type="submit">Caută</button>
+    </form>
+  </div>
+
+  <div class="row mb-3">
+    <div class="col-md-3">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="me-3 text-primary"><i class="fas fa-user-friends fa-2x"></i></div>
+            <div>
+              <div class="text-muted small">Total utilizatori</div>
+              <div class="h5 mb-0">{{ total_users }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="me-3 text-success"><i class="fas fa-signal fa-2x"></i></div>
+            <div>
+              <div class="text-muted small">Utilizatori online</div>
+              <div class="h5 mb-0">{{ online_count }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <thead>
+        <tr>
+          <th>Utilizator</th>
+          <th>Nume</th>
+          <th>Email</th>
+          <th>Roluri</th>
+          <th>Stare</th>
+          <th>Online</th>
+          <th>Acțiuni</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td>{{ u.username }}</td>
+          <td>{{ u.get_full_name|default:'-' }}</td>
+          <td>{{ u.email|default:'-' }}</td>
+          <td>
+            {% if u.is_superuser %}<span class="badge bg-danger">Superadmin</span>{% endif %}
+            {% if u.is_staff and not u.is_superuser %}<span class="badge bg-secondary">Staff</span>{% endif %}
+          </td>
+          <td>
+            {% if u.is_active %}
+              <span class="badge bg-success">Activ</span>
+            {% else %}
+              <span class="badge bg-secondary">Inactiv</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if u.id in user_ids_online %}
+              <span class="badge bg-success">Online</span>
+            {% else %}
+              <span class="badge bg-light text-dark">Offline</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="d-flex gap-2">
+              <form method="post" action="{% url 'core:admin_user_update' u.id %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="{% if u.is_active %}deactivate{% else %}activate{% endif %}">
+                <button class="btn btn-sm {% if u.is_active %}btn-outline-warning{% else %}btn-outline-success{% endif %}" type="submit">
+                  {% if u.is_active %}Dezactivează{% else %}Activează{% endif %}
+                </button>
+              </form>
+              <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#emailModal{{ u.id }}">Email</button>
+              <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#passwordModal{{ u.id }}">Parolă</button>
+            </div>
+
+            <!-- Email Modal -->
+            <div class="modal fade" id="emailModal{{ u.id }}" tabindex="-1">
+              <div class="modal-dialog">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title">Schimbă email pentru {{ u.username }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                  </div>
+                  <form method="post" action="{% url 'core:admin_user_update' u.id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="set_email">
+                    <div class="modal-body">
+                      <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="email" class="form-control" value="{{ u.email }}" required>
+                      </div>
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anulează</button>
+                      <button type="submit" class="btn btn-primary">Salvează</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+
+            <!-- Password Modal -->
+            <div class="modal fade" id="passwordModal{{ u.id }}" tabindex="-1">
+              <div class="modal-dialog">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title">Schimbă parola pentru {{ u.username }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                  </div>
+                  <form method="post" action="{% url 'core:admin_user_update' u.id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="set_password">
+                    <div class="modal-body">
+                      <div class="mb-3">
+                        <label class="form-label">Parolă nouă</label>
+                        <input type="text" name="password" class="form-control" required>
+                      </div>
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anulează</button>
+                      <button type="submit" class="btn btn-primary">Salvează</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+

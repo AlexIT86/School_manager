@@ -35,6 +35,10 @@ urlpatterns = [
     path('superadmin/approvals/', views.approvals_list_view, name='approvals'),
     path('superadmin/approvals/<int:profile_id>/approve/', views.approve_profile_view, name='approve_profile'),
 
+    # Admin users (superadmin)
+    path('superadmin/users/', views.admin_users_view, name='admin_users'),
+    path('superadmin/users/<int:user_id>/update/', views.admin_user_update_view, name='admin_user_update'),
+
     # Password reset
     path('password_reset/', auth_views.PasswordResetView.as_view(
         template_name='core/password_reset.html',

@@ -223,6 +223,8 @@ def schedule_calendar_view(request):
 @login_required
 def schedule_entry_create_view(request):
     """Creare intrare nouă în orar"""
+    if not request.user.is_superuser:
+        raise PermissionDenied
     if request.method == 'POST':
         form = ScheduleEntryForm(user=request.user, data=request.POST)
         if form.is_valid():
@@ -307,6 +309,8 @@ def schedule_entry_create_view(request):
 @login_required
 def schedule_entry_edit_view(request, entry_id):
     """Editare intrare din orar"""
+    if not request.user.is_superuser:
+        raise PermissionDenied
     entry = get_object_or_404(ScheduleEntry, id=entry_id, user=request.user)
 
     if request.method == 'POST':
@@ -343,6 +347,8 @@ def schedule_entry_edit_view(request, entry_id):
 @login_required
 def schedule_entry_delete_view(request, entry_id):
     """Ștergere intrare din orar"""
+    if not request.user.is_superuser:
+        raise PermissionDenied
     entry = get_object_or_404(ScheduleEntry, id=entry_id, user=request.user)
 
     if request.method == 'POST':
@@ -379,6 +385,8 @@ def schedule_templates_view(request):
 @login_required
 def schedule_template_create_view(request):
     """Creare template nou de orar"""
+    if not request.user.is_superuser:
+        raise PermissionDenied
     if request.method == 'POST':
         form = ScheduleTemplateForm(request.POST)
         if form.is_valid():
@@ -417,6 +425,8 @@ def schedule_template_create_view(request):
 @login_required
 def schedule_template_apply_view(request, template_id):
     """Aplicare template de orar"""
+    if not request.user.is_superuser:
+        raise PermissionDenied
     template = get_object_or_404(ScheduleTemplate, id=template_id, user=request.user)
 
     if request.method == 'POST':
@@ -442,6 +452,8 @@ def schedule_template_apply_view(request, template_id):
 @login_required
 def schedule_template_delete_view(request, template_id):
     """Ștergere template de orar"""
+    if not request.user.is_superuser:
+        raise PermissionDenied
     template = get_object_or_404(ScheduleTemplate, id=template_id, user=request.user)
 
     if request.method == 'POST':
@@ -490,6 +502,8 @@ def schedule_changes_view(request):
 @login_required
 def schedule_change_create_view(request):
     """Creare modificare în orar"""
+    if not request.user.is_superuser:
+        raise PermissionDenied
     if request.method == 'POST':
         form = ScheduleChangeForm(request.POST, user=request.user)
         if form.is_valid():
@@ -530,6 +544,8 @@ def schedule_change_create_view(request):
 @login_required
 def schedule_change_delete_view(request, change_id):
     """Ștergere modificare din orar"""
+    if not request.user.is_superuser:
+        raise PermissionDenied
     change = get_object_or_404(ScheduleChange, id=change_id, user=request.user)
 
     if request.method == 'POST':
@@ -670,6 +686,8 @@ def schedule_today_view(request):
 @login_required
 def schedule_quick_edit_view(request):
     """Editor rapid pentru orar - AJAX"""
+    if not request.user.is_superuser:
+        return JsonResponse({'success': False, 'error': 'Permisiune insuficientă'}, status=403)
     if request.method == 'POST':
         action = request.POST.get('action')
 

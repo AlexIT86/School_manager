@@ -18,6 +18,7 @@ from apps.schedule.models import apply_class_schedule_to_user
 from django.contrib.auth.models import Group, Permission, User
 from django.core.exceptions import PermissionDenied
 from django.urls import reverse
+from django.contrib.sessions.models import Session
 
 try:
     from .email_utils import send_email
@@ -530,6 +531,91 @@ def approve_profile_view(request, profile_id):
 
     messages.success(request, f'Profilul pentru {profile.user.username} a fost aprobat. Orar preluat: {created_count} intrări.')
     return redirect('core:approvals')
+
+
+@login_required
+def admin_users_view(request):
+    """Superadmin: statistici utilizatori (online/total) și CRUD de bază."""
+    if not request.user.is_superuser:
+        raise PermissionDenied
+
+    # Utilizatori online pe baza sesiunilor active
+    try:
+        active_sessions = Session.objects.filter(expire_date__gte=timezone.now())
+        user_ids_online = set()
+        for s in active_sessions:
+            try:
+                data = s.get_decoded()
+                uid = int(data.get('_auth_user_id')) if data.get('_auth_user_id') else None
+                if uid:
+                    user_ids_online.add(uid)
+            except Exception:
+                continue
+    except Exception:
+        user_ids_online = set()
+
+    # Listare utilizatori cu stat
+    users = User.objects.all().order_by('-is_superuser', '-is_staff', '-is_active', '-date_joined')
+
+    # Filtre opționale
+    q = request.GET.get('q', '').strip()
+    if q:
+        users = users.filter(Q(username__icontains=q) | Q(first_name__icontains=q) | Q(last_name__icontains=q) | Q(email__icontains=q))
+
+    total_users = User.objects.count()
+    online_count = users.filter(id__in=user_ids_online).count() if user_ids_online else 0
+
+    context = {
+        'users': users,
+        'total_users': total_users,
+        'online_count': online_count,
+        'user_ids_online': user_ids_online,
+        'q': q,
+    }
+
+    return render(request, 'core/admin_users.html', context)
+
+
+@login_required
+def admin_user_update_view(request, user_id):
+    """Superadmin: acțiuni pe utilizator (activare/dezactivare, email, parolă)."""
+    if not request.user.is_superuser:
+        raise PermissionDenied
+
+    target_user = get_object_or_404(User, id=user_id)
+
+    if request.method != 'POST':
+        return redirect('core:admin_users')
+
+    action = request.POST.get('action')
+    try:
+        if action == 'activate':
+            target_user.is_active = True
+            target_user.save(update_fields=['is_active'])
+            messages.success(request, f'Utilizatorul {target_user.username} a fost activat.')
+        elif action == 'deactivate':
+            target_user.is_active = False
+            target_user.save(update_fields=['is_active'])
+            messages.success(request, f'Utilizatorul {target_user.username} a fost dezactivat.')
+        elif action == 'set_email':
+            new_email = (request.POST.get('email') or '').strip()
+            target_user.email = new_email
+            target_user.save(update_fields=['email'])
+            messages.success(request, f'Email actualizat pentru {target_user.username}.')
+        elif action == 'set_password':
+            new_password = (request.POST.get('password') or '').strip()
+            if not new_password:
+                messages.error(request, 'Parola nu poate fi goală.')
+            else:
+                target_user.set_password(new_password)
+                target_user.save()
+                messages.success(request, f'Parola a fost schimbată pentru {target_user.username}.')
+        else:
+            messages.error(request, 'Acțiune necunoscută.')
+    except Exception:
+        messages.error(request, 'Operația a eșuat.')
+
+    return redirect('core:admin_users')
 
 
 @login_required
