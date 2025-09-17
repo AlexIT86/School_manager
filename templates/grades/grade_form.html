@@ -326,6 +326,7 @@
                     {% for subject in form.subject.field.queryset %}
                     <div class="subject-option" 
                          data-subject-id="{{ subject.id }}"
+                         data-subject-color="{{ subject.culoare }}"
                          style="--subject-color: {{ subject.culoare }};"
                          onclick="selectSubject({{ subject.id }}, '{{ subject.culoare }}')">
                         <div class="subject-name">{{ subject.nume }}</div>
@@ -505,6 +506,15 @@ document.addEventListener('DOMContentLoaded', function() {
     selectSubject({{ grade.subject.id }}, '{{ grade.subject.culoare }}');
     {% else %}
     document.querySelector('[data-type="nota"]').click();
+    // Preselect subject if initial value is provided (e.g., ?subject=ID)
+    (function preselectSubjectFromInitial(){
+        const hiddenInput = document.getElementById('{{ form.subject.id_for_label }}');
+        if (hiddenInput && hiddenInput.value) {
+            const opt = document.querySelector(`.subject-option[data-subject-id="${hiddenInput.value}"]`);
+            const color = opt ? (opt.dataset.subjectColor || '#4facfe') : '#4facfe';
+            selectSubject(hiddenInput.value, color);
+        }
+    })();
     {% endif %}
 });
 

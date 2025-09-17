@@ -34,20 +34,7 @@
     opacity: 0.8;
 }
 
-.priority-badge {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 600;
-}
-
-.priority-urgenta { background: #dc3545; color: white; }
-.priority-ridicata { background: #fd7e14; color: white; }
-.priority-normala { background: #6c757d; color: white; }
-.priority-scazuta { background: #28a745; color: white; }
+/* Removed priority-badge styles not used anymore */
 
 .homework-progress {
     height: 8px;
@@ -350,10 +337,6 @@
                          {% elif homework.finalizata %}completed{% endif %}"
                          data-homework-id="{{ homework.id }}">
                         
-                        <span class="priority-badge priority-{{ homework.prioritate }}">
-                            {{ homework.get_prioritate_display }}
-                        </span>
-                        
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-start mb-3">
                                 <div>
@@ -373,19 +356,7 @@
                                     {% endif %}
                                 </div>
                                 
-                                <div>
-                                    {% if homework.user_id == request.user.id %}
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" 
-                                               {% if homework.finalizata %}checked{% endif %}
-                                               onchange="toggleHomework({{ homework.id }})"
-                                               id="hw-{{ homework.id }}">
-                                        <label class="form-check-label" for="hw-{{ homework.id }}">
-                                            {% if homework.finalizata %}Finalizată{% else %}Marchează ca finalizată{% endif %}
-                                        </label>
-                                    </div>
-                                    {% endif %}
-                                </div>
+                                <div></div>
                             </div>
                             
                             <p class="card-text text-muted">
@@ -448,13 +419,6 @@
                                 </a>
                                 {% endif %}
                                 
-                                {% if homework.user_id == request.user.id and not homework.finalizata %}
-                                <button class="btn btn-outline-success btn-sm" 
-                                        onclick="startSession({{ homework.id }})">
-                                    <i class="fas fa-play me-1"></i>Începe lucrul
-                                </button>
-                                {% endif %}
-                                
                                 {% if homework.user_id == request.user.id %}
                                 <div class="dropdown">
                                     <button class="btn btn-outline-secondary btn-sm dropdown-toggle" 
@@ -463,19 +427,6 @@
                                     </button>
                                     <ul class="dropdown-menu">
                                         {% if homework.user_id == request.user.id %}
-                                        <li>
-                                            <form method="post" action="{% url 'homework:edit' homework.id %}" class="px-3 py-2">
-                                                {% csrf_token %}
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" name="share_with_class" id="share-{{ homework.id }}" {% if homework.share_with_class %}checked{% endif %} onchange="this.form.submit()">
-                                                    <label class="form-check-label" for="share-{{ homework.id }}">
-                                                        <i class="fas fa-share-alt me-2"></i>Share cu clasa
-                                                    </label>
-                                                </div>
-                                            </form>
-                                        </li>
-                                        <li><hr class="dropdown-divider"></li>
-                                        {% endif %}
                                         <li>
                                             <a class="dropdown-item" href="{% url 'homework:file_upload' homework.id %}">
                                                 <i class="fas fa-upload me-2"></i>Încarcă fișier
@@ -493,6 +444,7 @@
                                                 <i class="fas fa-trash me-2"></i>Șterge
                                             </a>
                                         </li>
+                                        {% endif %}
                                     </ul>
                                 </div>
                                 {% endif %}
@@ -558,41 +510,6 @@
 function getCSRFToken() {
     const el = document.querySelector('[name=csrfmiddlewaretoken]');
     return el ? el.value : (document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '');
-}
-
-function toggleHomework(homeworkId) {
-    fetch(`/teme/${homeworkId}/toggle-complete/`, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': getCSRFToken(),
-            'X-Requested-With': 'XMLHttpRequest'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            location.reload();
-        }
-    })
-    .catch(error => console.error('Error:', error));
-}
-
-function startSession(homeworkId) {
-    fetch(`/teme/${homeworkId}/session/start/`, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': getCSRFToken(),
-            'X-Requested-With': 'XMLHttpRequest'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            SchoolManager.showAlert('Sesiunea de lucru a fost începută!', 'success');
-            window.location.href = `/teme/${homeworkId}/`;
-        }
-    })
-    .catch(error => console.error('Error:', error));
 }
 
 // Auto-submit filter form on change
