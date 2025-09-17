@@ -256,6 +256,81 @@ def dashboard_view(request):
     else:
         stats['general_average'] = 0
 
+    # --- Module progress (2025–2026) și următoarea vacanță (ajustat după județ) ---
+    # Județul elevului (dacă are clasă asociată)
+    judet = None
+    try:
+        if profile and getattr(profile, 'class_room', None) and profile.class_room.judet:
+            judet = profile.class_room.judet.strip()
+    except Exception:
+        pass
+
+    grupa1 = {'Cluj', 'Timiș', 'Bistrița-Năsăud'}  # 9-15 feb
+    grupa2 = {
+        'București', 'Ilfov', 'Sălaj', 'Bihor', 'Arad', 'Iași', 'Hunedoara', 'Brașov',
+        'Caraș-Severin', 'Gorj', 'Vâlcea', 'Argeș', 'Dâmbovița', 'Prahova', 'Buzău',
+        'Tulcea', 'Mehedinți', 'Dolj', 'Olt', 'Teleorman', 'Ialomița', 'Călărași'
+    }  # 16-22 feb
+    grupa3 = {
+        'Satu-Mare', 'Maramureș', 'Suceava', 'Botoșani', 'Alba', 'Sibiu', 'Mureș',
+        'Harghita', 'Neamț', 'Covasna', 'Bacău', 'Vrancea', 'Vaslui', 'Galați',
+        'Brăila', 'Giurgiu', 'Constanța'
+    }  # 23 feb - 1 mar
+
+    end_m3 = date(2026, 2, 13)
+    start_m4 = date(2026, 2, 23)
+    if judet in grupa1:
+        end_m3 = date(2026, 2, 6)
+        start_m4 = date(2026, 2, 16)
+    elif judet in grupa3:
+        end_m3 = date(2026, 2, 20)
+        start_m4 = date(2026, 3, 2)
+
+    modules = [
+        (1, date(2025, 9, 8),  date(2025, 10, 24)),
+        (2, date(2025, 11, 3), date(2025, 12, 19)),
+        (3, date(2026, 1, 8),  end_m3),
+        (4, start_m4,          date(2026, 4, 3)),
+        (5, date(2026, 4, 15), date(2026, 6, 19)),
+    ]
+
+    current_module = None
+    for mnum, mstart, mend in modules:
+        if mstart <= today <= mend:
+            current_module = (mnum, mstart, mend)
+            break
+
+    module_progress = None
+    if current_module:
+        mnum, mstart, mend = current_module
+        total_days = max(1, (mend - mstart).days)
+        passed_days = max(0, (today - mstart).days)
+        percent = min(100, max(0, int(round(passed_days * 100 / total_days))))
+        module_progress = {
+            'number': mnum,
+            'start': mstart,
+            'end': mend,
+            'percent': percent,
+            'days_passed': passed_days,
+            'days_total': total_days,
+        }
+
+    # Vacanțe (următoarea)
+    vac_feb_start = date(2026, 2, 9) if judet in grupa1 else (date(2026, 2, 16) if judet in grupa2 else (date(2026, 2, 23) if judet in grupa3 else date(2026, 2, 16)))
+    vac_feb_end = date(2026, 2, 15) if judet in grupa1 else (date(2026, 2, 22) if judet in grupa2 else (date(2026, 3, 1) if judet in grupa3 else date(2026, 2, 22)))
+    vacations = [
+        ('Vacanța de toamnă', date(2025, 10, 25), date(2025, 11, 2)),
+        ('Vacanța de iarnă', date(2025, 12, 20), date(2026, 1, 7)),
+        ('Vacanța mobilă din februarie', vac_feb_start, vac_feb_end),
+        ('Vacanța de primăvară', date(2026, 4, 4), date(2026, 4, 14)),
+        ('Vacanța de vară', date(2026, 6, 20), date(2026, 9, 6)),
+    ]
+    next_vacation = None
+    for vname, vstart, vend in vacations:
+        if vstart > today:
+            next_vacation = {'name': vname, 'start': vstart}
+            break
+
     context = {
         'profile': profile,
         'stats': stats,
@@ -266,7 +341,9 @@ def dashboard_view(request):
         'today_schedule': today_schedule,
         'unread_notifications': unread_notifications,
         'today': today,
-        'weekday_name': ['Luni', 'Marți', 'Miercuri', 'Joi', 'Vineri', 'Sâmbătă', 'Duminică'][weekday - 1]
+        'weekday_name': ['Luni', 'Marți', 'Miercuri', 'Joi', 'Vineri', 'Sâmbătă', 'Duminică'][weekday - 1],
+        'module_progress': module_progress,
+        'next_vacation': next_vacation,
     }
 
     return render(request, 'core/dashboard.html', context)
