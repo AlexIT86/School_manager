@@ -1,0 +1,829 @@
+/* ==========================================================================
+   Dashboard Specific Styles
+   ========================================================================== */
+
+/* Welcome Header */
+.welcome-header {
+  background: linear-gradient(135deg, rgba(79, 172, 254, 0.1) 0%, rgba(0, 242, 254, 0.05) 100%);
+  border-radius: 20px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  border: 1px solid rgba(79, 172, 254, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.welcome-header::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(79, 172, 254, 0.1) 0%, transparent 70%);
+  animation: float 8s ease-in-out infinite;
+}
+
+.welcome-header h1 {
+  font-weight: 700;
+  color: #1f2a37; /* darker for better contrast on light bg */
+  margin-bottom: 0.5rem;
+}
+
+.welcome-header p {
+  font-size: 1.1rem;
+  margin-bottom: 0;
+}
+
+/* Stat Cards */
+.stat-card {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  border: none;
+  border-radius: 20px;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100px;
+  height: 100px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
+  transform: translate(30%, -30%);
+}
+
+.stat-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+}
+
+.stat-icon {
+  opacity: 0.9;
+}
+
+.stat-card .card-title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card .card-text {
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-card .badge {
+  background: rgba(255, 255, 255, 0.2) !important;
+  color: white;
+  font-weight: 600;
+  border-radius: 15px;
+  padding: 5px 10px;
+}
+
+/* Today's Schedule */
+.schedule-today {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.schedule-entry {
+  transition: all 0.3s ease;
+  border-radius: 0;
+  position: relative;
+}
+
+.schedule-entry:hover {
+  background-color: rgba(79, 172, 254, 0.05);
+  transform: translateX(5px);
+}
+
+.schedule-entry:last-child {
+  border-bottom: none !important;
+}
+
+.time-slot {
+  min-width: 80px;
+  text-align: center;
+  position: relative;
+}
+
+.time-slot::after {
+  content: '';
+  position: absolute;
+  right: -15px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 8px;
+  background: var(--subject-color, #007bff);
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.2);
+}
+
+.subject-info {
+  flex-grow: 1;
+  border-left: 4px solid var(--subject-color, #007bff);
+  border-radius: 0 8px 8px 0;
+  transition: all 0.3s ease;
+}
+
+.subject-info:hover {
+  background-color: rgba(79, 172, 254, 0.05);
+}
+
+.hour-number .badge {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  color: #495057;
+  font-weight: 600;
+  border-radius: 15px;
+  padding: 8px 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Homework Items */
+.homework-item {
+  transition: all 0.3s ease;
+  border-radius: 12px;
+  margin: 0 -15px;
+  padding: 15px !important;
+}
+
+.homework-item:hover {
+  background-color: rgba(79, 172, 254, 0.05);
+  transform: translateX(5px);
+}
+
+.homework-item:last-child {
+  border-bottom: none !important;
+}
+
+.priority-indicator {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(79, 172, 254, 0.1);
+  transition: all 0.3s ease;
+}
+
+.homework-item:hover .priority-indicator {
+  transform: scale(1.1);
+}
+
+.homework-item h6 a {
+  color: #1f2a37; /* improve contrast */
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.homework-item h6 a:hover {
+  color: #4facfe;
+}
+
+.homework-item .progress {
+  height: 6px;
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.homework-item .progress-bar {
+  border-radius: 10px;
+  background: linear-gradient(90deg, #11998e 0%, #38ef7d 100%);
+  transition: width 0.6s ease;
+}
+
+/* Grade Items */
+.grade-item {
+  transition: all 0.3s ease;
+  border-radius: 12px;
+  margin: 0 -15px;
+  padding: 15px !important;
+}
+
+.grade-item:hover {
+  background-color: rgba(79, 172, 254, 0.05);
+  transform: translateX(5px);
+}
+
+.grade-item:last-child {
+  border-bottom: none !important;
+}
+
+.grade-value {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1.2rem;
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+}
+
+.grade-item:hover .grade-value {
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* Notification Items */
+.notification-item {
+  transition: all 0.3s ease;
+  border-radius: 12px;
+  padding: 12px;
+  margin: 0 -12px 12px -12px;
+}
+
+.notification-item:hover {
+  background-color: rgba(79, 172, 254, 0.05);
+  transform: translateX(3px);
+}
+
+.notification-item:last-child {
+  border-bottom: none !important;
+}
+
+/* Quick Actions Card */
+.card .d-grid .btn {
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.card .d-grid .btn:hover {
+  transform: translateY(-2px);
+  border-color: currentColor;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.card .d-grid .btn i {
+  margin-right: 8px;
+  transition: transform 0.3s ease;
+}
+
+.card .d-grid .btn:hover i {
+  transform: scale(1.2);
+}
+
+/* Today's Homework Checkboxes */
+.form-check {
+  position: relative;
+}
+
+.form-check-input {
+  border-radius: 6px;
+  border: 2px solid #ddd;
+  width: 20px;
+  height: 20px;
+  transition: all 0.3s ease;
+}
+
+.form-check-input:checked {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  border-color: #4facfe;
+  transform: scale(1.1);
+}
+
+.form-check-input:checked + .form-check-label {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+/* Absence Items */
+.absence-item {
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.absence-item:last-child {
+  border-bottom: none;
+}
+
+.absence-item .badge {
+  font-size: 0.7rem;
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 1200px) {
+  .stat-card .card-title {
+    font-size: 2rem;
+  }
+  
+  .stat-card .card-body {
+    padding: 1.25rem;
+  }
+}
+
+@media (max-width: 992px) {
+  .welcome-header {
+    padding: 1.5rem;
+  }
+  
+  .welcome-header h1 {
+    font-size: 1.75rem;
+  }
+  
+  .stat-card .card-title {
+    font-size: 1.8rem;
+  }
+  
+  .schedule-today {
+    max-height: 300px;
+  }
+}
+
+@media (max-width: 768px) {
+  .welcome-header {
+    padding: 1rem;
+    text-align: center;
+  }
+  
+  .welcome-header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .stat-card .card-body {
+    padding: 1rem;
+  }
+  
+  .stat-card .card-title {
+    font-size: 1.6rem;
+  }
+  
+  .stat-icon {
+    font-size: 1.5rem !important;
+  }
+  
+  .homework-item,
+  .grade-item {
+    padding: 12px !important;
+  }
+  
+  .time-slot {
+    min-width: 60px;
+  }
+  
+  .grade-value {
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .welcome-header {
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+  }
+  
+  .welcome-header h1 {
+    font-size: 1.25rem;
+  }
+  
+  .welcome-header p {
+    font-size: 0.9rem;
+  }
+  
+  .stat-card {
+    margin-bottom: 1rem;
+  }
+  
+  .stat-card .card-body {
+    padding: 0.75rem;
+  }
+  
+  .stat-card .card-title {
+    font-size: 1.4rem;
+  }
+  
+  .subject-info {
+    border-left-width: 3px;
+  }
+  
+  .priority-indicator {
+    width: 35px;
+    height: 35px;
+  }
+  
+  .card .d-grid .btn {
+    padding: 10px 12px;
+    font-size: 0.9rem;
+  }
+}
+
+/* Animation Classes */
+.fade-in-up {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.slide-in-left {
+  animation: slideInLeft 0.5s ease-out;
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.bounce-in {
+  animation: bounceIn 0.6s ease-out;
+}
+
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Dashboard Grid Layout */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.dashboard-widget {
+  background: white;
+  border-radius: 20px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.dashboard-widget:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.dashboard-widget::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, var(--gradient-primary));
+}
+
+.widget-header {
+  display: flex;
+  justify-content: between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.widget-title {
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 0;
+  display: flex;
+  align-items: center;
+}
+
+.widget-title i {
+  margin-right: 0.5rem;
+  font-size: 1.2rem;
+}
+
+.widget-action {
+  font-size: 0.875rem;
+  color: #6c757d;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.widget-action:hover {
+  color: #4facfe;
+}
+
+/* Dashboard Specific Components */
+.progress-ring {
+  width: 80px;
+  height: 80px;
+  position: relative;
+}
+
+.progress-ring svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.progress-ring circle {
+  fill: none;
+  stroke-width: 8;
+  stroke-linecap: round;
+}
+
+.progress-ring .bg {
+  stroke: #e9ecef;
+}
+
+.progress-ring .progress {
+  stroke: #4facfe;
+  stroke-dasharray: 251.2; /* 2 * Math.PI * 40 */
+  stroke-dashoffset: 251.2;
+  transition: stroke-dashoffset 0.6s ease;
+}
+
+.progress-ring .text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: #2c3e50;
+}
+
+/* Status Indicators */
+.status-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
+  position: relative;
+}
+
+.status-dot.active {
+  background-color: #28a745;
+  box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.2);
+}
+
+.status-dot.warning {
+  background-color: #ffc107;
+  box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.2);
+}
+
+.status-dot.danger {
+  background-color: #dc3545;
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.2);
+}
+
+.status-dot.inactive {
+  background-color: #6c757d;
+  box-shadow: 0 0 0 3px rgba(108, 117, 125, 0.2);
+}
+
+/* Quick Stats Mini Cards */
+.mini-stat {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 12px;
+  padding: 1rem;
+  text-align: center;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.mini-stat:hover {
+  transform: translateY(-3px);
+  border-color: #4facfe;
+  box-shadow: 0 8px 20px rgba(79, 172, 254, 0.2);
+}
+
+.mini-stat .value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #2c3e50;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.mini-stat .label {
+  font-size: 0.8rem;
+  color: #6c757d;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* Today Weather Widget (if implemented) */
+.weather-widget {
+  background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+  color: white;
+  border-radius: 20px;
+  padding: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.weather-widget::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 150px;
+  height: 150px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+  animation: float 10s ease-in-out infinite;
+}
+
+.weather-temp {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+}
+
+.weather-desc {
+  opacity: 0.9;
+  font-weight: 500;
+}
+
+/* Calendar Mini View */
+.mini-calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-top: 1rem;
+}
+
+.mini-calendar .day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  position: relative;
+  cursor: pointer;
+}
+
+.mini-calendar .day:hover {
+  background-color: rgba(79, 172, 254, 0.1);
+  transform: scale(1.1);
+}
+
+.mini-calendar .day.today {
+  background-color: #4facfe;
+  color: white;
+  font-weight: 700;
+}
+
+.mini-calendar .day.has-event::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  background-color: #28a745;
+  border-radius: 50%;
+}
+
+/* Loading Skeletons */
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+  border-radius: 8px;
+}
+
+.skeleton-text {
+  height: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.skeleton-text.short {
+  width: 60%;
+}
+
+.skeleton-text.medium {
+  width: 80%;
+}
+
+.skeleton-text.long {
+  width: 100%;
+}
+
+.skeleton-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.skeleton-rect {
+  height: 120px;
+  border-radius: 12px;
+}
+
+/* Error States */
+.error-state {
+  text-align: center;
+  padding: 2rem;
+  color: #6c757d;
+}
+
+.error-state i {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.error-state h6 {
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.error-state p {
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.retry-btn {
+  background: none;
+  border: 2px solid #4facfe;
+  color: #4facfe;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.retry-btn:hover {
+  background-color: #4facfe;
+  color: white;
+  transform: translateY(-2px);
+}
+
+/* Dashboard Performance Optimizations */
+.dashboard-container {
+  contain: layout style paint;
+}
+
+.widget-content {
+  will-change: transform;
+}
+
+/* Print Optimizations for Dashboard */
+@media print {
+  .dashboard-widget {
+    break-inside: avoid;
+    box-shadow: none;
+    border: 1px solid #ddd;
+  }
+  
+  .stat-card {
+    background: white !important;
+    color: black !important;
+  }
+  
+  .welcome-header {
+    background: white !important;
+    border: 1px solid #ddd;
+  }
+}
+
+/* Dark mode disabled intentionally for dashboard */
