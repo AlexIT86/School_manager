@@ -136,6 +136,10 @@ LOGIN_URL = 'core:login'
 LOGIN_REDIRECT_URL = 'core:dashboard'
 LOGOUT_REDIRECT_URL = 'core:login'
 
+# Permit embedding doar în dezvoltare pentru previzualizări PDF în iframe
+if DEBUG:
+    X_FRAME_OPTIONS = 'SAMEORIGIN'
+
 # File upload settings
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB

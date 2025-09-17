@@ -92,7 +92,10 @@
                                 <div class="fw-semibold">{{ f.nume }}</div>
                                 <small class="text-muted">{{ f.uploaded_at|date:"d.m.Y H:i" }} • {{ f.get_tip_display }}</small>
                             </div>
-                            <a href="{% url 'subjects:file_download' subject.id f.id %}" class="btn btn-sm btn-outline-secondary">Descarcă</a>
+                            <div class="btn-group btn-group-sm">
+                                <button type="button" class="btn btn-outline-primary" onclick="openPreviewModal('{{ f.fisier.url }}', '{{ f.nume|escapejs }}')"><i class="fas fa-eye"></i></button>
+                                <a href="{% url 'subjects:file_download' subject.id f.id %}" class="btn btn-outline-secondary"><i class="fas fa-download"></i></a>
+                            </div>
                         </div>
                         {% endfor %}
                     {% else %}
@@ -101,6 +104,33 @@
                 </div>
             </div>
         </div>
+    </div>
+    <!-- File Preview Modal -->
+    <div class="modal fade" id="filePreviewModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="filePreviewTitle">Previzualizare fișier</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body p-0" style="background:#000;">
+            <div id="imagePreviewWrapper" class="d-none position-relative w-100" style="overflow:auto; max-height:75vh;">
+              <img id="imagePreview" src="#" alt="preview" style="transform-origin: 0 0; display:block; max-width:none;">
+            </div>
+            <div id="pdfPreviewWrapper" class="d-none" style="height:75vh;">
+              <iframe id="pdfPreview" src="#" style="width:100%; height:100%; border:0; background:#fff;"></iframe>
+            </div>
+          </div>
+          <div class="modal-footer d-flex justify-content-between">
+            <div id="imageControls" class="btn-group d-none" role="group">
+              <button type="button" class="btn btn-outline-secondary btn-sm" onclick="zoomImage(-0.2)"><i class="fas fa-search-minus"></i></button>
+              <button type="button" class="btn btn-outline-secondary btn-sm" onclick="resetZoom()"><i class="fas fa-compress"></i></button>
+              <button type="button" class="btn btn-outline-secondary btn-sm" onclick="zoomImage(0.2)"><i class="fas fa-search-plus"></i></button>
+            </div>
+            <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Închide</button>
+          </div>
+        </div>
+      </div>
     </div>
 </div>
 {% endblock %}
@@ -131,6 +161,54 @@ function setSubjectColor(subjectId, hexColor){
         }
     })
     .catch(() => SchoolManager.showAlert('Eroare de rețea.', 'danger'));
+}
+
+let modal, imgEl, imgWrapper, pdfEl, pdfWrapper, controls;
+let zoomScale = 1;
+
+function openPreviewModal(url, filename){
+  modal = modal || new bootstrap.Modal(document.getElementById('filePreviewModal'));
+  imgEl = imgEl || document.getElementById('imagePreview');
+  imgWrapper = imgWrapper || document.getElementById('imagePreviewWrapper');
+  pdfEl = pdfEl || document.getElementById('pdfPreview');
+  pdfWrapper = pdfWrapper || document.getElementById('pdfPreviewWrapper');
+  controls = controls || document.getElementById('imageControls');
+  document.getElementById('filePreviewTitle').textContent = filename;
+  zoomScale = 1;
+  resetZoom(true);
+
+  const ext = (url.split('.').pop() || '').toLowerCase();
+  const isImage = ['jpg','jpeg','png','gif','webp','bmp','svg'].includes(ext);
+  const isPdf = ext === 'pdf';
+
+  if (isImage) {
+    imgEl.src = url;
+    imgWrapper.classList.remove('d-none');
+    pdfWrapper.classList.add('d-none');
+    controls.classList.remove('d-none');
+  } else if (isPdf) {
+    pdfEl.src = url;
+    pdfWrapper.classList.remove('d-none');
+    imgWrapper.classList.add('d-none');
+    controls.classList.add('d-none');
+  } else {
+    // fallback: iframe generic
+    pdfEl.src = url;
+    pdfWrapper.classList.remove('d-none');
+    imgWrapper.classList.add('d-none');
+    controls.classList.add('d-none');
+  }
+  modal.show();
+}
+
+function zoomImage(delta){
+  zoomScale = Math.max(0.2, Math.min(5, zoomScale + delta));
+  imgEl.style.transform = `scale(${zoomScale})`;
+}
+function resetZoom(skipCenter){
+  zoomScale = 1;
+  if (imgEl) imgEl.style.transform = 'scale(1)';
+  if (!skipCenter && imgWrapper) imgWrapper.scrollTo({top:0,left:0});
 }
 </script>
 {% endblock %}
