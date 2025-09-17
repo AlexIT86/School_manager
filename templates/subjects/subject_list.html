@@ -346,10 +346,12 @@
                                        class="btn btn-outline-primary" title="Vezi detalii">
                                         <i class="fas fa-eye"></i>
                                     </a>
+                                    {% if request.user.is_superuser %}
                                     <a href="{% url 'subjects:edit' item.subject.id %}" 
                                        class="btn btn-outline-secondary" title="Editează">
                                         <i class="fas fa-edit"></i>
                                     </a>
+                                    {% endif %}
                                     <a href="{% url 'grades:subject_grades' item.subject.id %}" 
                                        class="btn btn-outline-success" title="Note">
                                         <i class="fas fa-chart-line"></i>
@@ -367,6 +369,10 @@
                                             <input type="range" min="1" max="5" value="{{ item.subject.rating }}" 
                                                    class="form-range subject-rating-slider" data-subject-id="{{ item.subject.id }}">
                                         </li>
+                                        <li class="px-3 py-2">
+                                            <label class="small text-muted d-block mb-1">Culoare</label>
+                                            <input type="color" class="form-control form-control-color subject-color-picker" value="{{ item.subject.culoare }}" data-subject-id="{{ item.subject.id }}" title="Alege culoarea">
+                                        </li>
                                         <li>
                                             <a class="dropdown-item" href="{% url 'homework:create' %}?subject={{ item.subject.id }}">
                                                 <i class="fas fa-plus me-2 text-info"></i>Adaugă temă
@@ -382,12 +388,14 @@
                                                 <i class="fas fa-upload me-2 text-success"></i>Încarcă fișier
                                             </a>
                                         </li>
+                                        {% if request.user.is_superuser %}
                                         <li><hr class="dropdown-divider"></li>
                                         <li>
                                             <a class="dropdown-item text-danger" href="{% url 'subjects:delete' item.subject.id %}">
                                                 <i class="fas fa-trash me-2"></i>Șterge
                                             </a>
                                         </li>
+                                        {% endif %}
                                     </ul>
                                 </div>
                             </div>
@@ -422,6 +430,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const subjectItems = document.querySelectorAll('.subject-item');
     const ratingStarsGroups = document.querySelectorAll('.rating-stars');
     const ratingSliders = document.querySelectorAll('.subject-rating-slider');
+    const colorPickers = document.querySelectorAll('.subject-color-picker');
     
     // Search functionality
     searchInput.addEventListener('input', function() {
@@ -547,6 +556,14 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    // Color picker change
+    colorPickers.forEach(picker => {
+        picker.addEventListener('input', function() {
+            const subjectId = this.dataset.subjectId;
+            updateColor(subjectId, this.value);
+        });
+    });
+
     function updateRating(subjectId, value, starsGroupEl) {
         fetch(`/materii/${subjectId}/rating/${value}/`, {
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
@@ -563,6 +580,45 @@ document.addEventListener('DOMContentLoaded', function() {
                 SchoolManager.showAlert('Rating actualizat!', 'success');
             } else {
                 SchoolManager.showAlert('Eroare la setarea rating-ului.', 'danger');
+            }
+        })
+        .catch(() => SchoolManager.showAlert('Eroare de rețea.', 'danger'));
+    }
+
+    function getCookie(name){
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return '';
+    }
+
+    function updateColor(subjectId, hexColor) {
+        const csrftoken = getCookie('csrftoken');
+        const body = new URLSearchParams();
+        body.set('color', hexColor);
+        fetch(`/materii/${subjectId}/set-color/`, {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': csrftoken, 'Content-Type': 'application/x-www-form-urlencoded' },
+            body
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                // Update UI: header gradient & badges
+                const elem = document.querySelector(`.subject-item [data-subject-id="${subjectId}"]`);
+                const card = elem ? elem.closest('.subject-card') : null;
+                if (card) {
+                    const header = card.querySelector('.subject-header');
+                    if (header) header.style.background = `linear-gradient(135deg, ${hexColor} 0%, ${hexColor}cc 100%)`;
+                    const gradeBadge = card.querySelector('.grade-badge');
+                    if (gradeBadge) {
+                        gradeBadge.style.backgroundColor = hexColor + '20';
+                        gradeBadge.style.color = hexColor;
+                    }
+                }
+                SchoolManager.showAlert('Culoare actualizată!', 'success');
+            } else {
+                SchoolManager.showAlert(data.error || 'Eroare la setarea culorii.', 'danger');
             }
         })
         .catch(() => SchoolManager.showAlert('Eroare de rețea.', 'danger'));

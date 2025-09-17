@@ -9,9 +9,11 @@
             <i class="fas fa-book me-2"></i>{{ subject.nume }}
         </h4>
         <div class="btn-group">
+            {% if request.user.is_superuser %}
             <a href="{% url 'subjects:edit' subject.id %}" class="btn btn-outline-secondary btn-sm">
                 <i class="fas fa-edit me-1"></i>Editează
             </a>
+            {% endif %}
             <a href="{% url 'subjects:files' subject.id %}" class="btn btn-outline-info btn-sm">
                 <i class="fas fa-folder-open me-1"></i>Fișiere
             </a>
@@ -33,9 +35,11 @@
                         </div>
                         <div class="col-md-6">
                             <div class="mb-2"><strong>Activă:</strong> {% if subject.activa %}Da{% else %}Nu{% endif %}</div>
-                            <div class="mb-2"><strong>Culoare:</strong>
-                                <span class="badge" style="background-color: {{ subject.culoare }};">&nbsp;&nbsp;</span>
-                                <code class="ms-1">{{ subject.culoare }}</code>
+                            <div class="mb-2">
+                                <strong>Culoare:</strong>
+                                <span class="badge align-middle" style="background-color: {{ subject.culoare }};">&nbsp;&nbsp;</span>
+                                <code class="ms-1 align-middle">{{ subject.culoare }}</code>
+                                <input type="color" class="form-control form-control-color d-inline-block ms-2" style="vertical-align:middle;" value="{{ subject.culoare }}" title="Alege culoarea" onchange="setSubjectColor({{ subject.id }}, this.value)">
                             </div>
                         </div>
                     </div>
@@ -101,4 +105,32 @@
 </div>
 {% endblock %}
 
- 
+{% block extra_js %}
+<script>
+function setSubjectColor(subjectId, hexColor){
+    function getCookie(name){
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return '';
+    }
+    const csrftoken = getCookie('csrftoken');
+    const body = new URLSearchParams();
+    body.set('color', hexColor);
+    fetch(`/materii/${subjectId}/set-color/`, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': csrftoken, 'Content-Type': 'application/x-www-form-urlencoded' },
+        body
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            SchoolManager.showAlert(data.error || 'Eroare la setarea culorii.', 'danger');
+        }
+    })
+    .catch(() => SchoolManager.showAlert('Eroare de rețea.', 'danger'));
+}
+</script>
+{% endblock %}

@@ -13,6 +13,7 @@ urlpatterns = [
 
     # Rating
     path('<int:subject_id>/rating/<int:value>/', views.subject_set_rating_view, name='set_rating'),
+    path('<int:subject_id>/set-color/', views.subject_set_color_view, name='set_color'),
 
     # Fișiere
     path('<int:subject_id>/files/', views.subject_files_view, name='files'),

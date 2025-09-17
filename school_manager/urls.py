@@ -3,6 +3,7 @@ URL configuration for school_manager project.
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.views.defaults import permission_denied
 from django.conf import settings
 from django.conf.urls.static import static
 from django.shortcuts import redirect
@@ -19,6 +20,8 @@ urlpatterns = [
     path('orar/', include('apps.schedule.urls')),
     path('teme/', include('apps.homework.urls')),
     path('note/', include('apps.grades.urls')),
+    # 403 custom fallback (optional explicit path to preview)
+    path('403/', permission_denied, {'exception': Exception('Forbidden')}, name='forbidden'),
 ]
 
 # Serve media files in development

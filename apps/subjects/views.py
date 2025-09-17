@@ -6,6 +6,8 @@ from django.db.models import Count, Avg
 from django.core.paginator import Paginator
 from django.conf import settings
 from django.views.decorators.http import require_POST
+from django.core.exceptions import PermissionDenied
+import re
 import os
 
 from .models import Subject, SubjectFile, SubjectNote
@@ -128,6 +130,10 @@ def subject_edit_view(request, subject_id):
     """Editare materie existentă"""
     subject = get_object_or_404(Subject, id=subject_id, user=request.user)
 
+    # Doar superadmin poate edita toate câmpurile din materie
+    if not request.user.is_superuser:
+        raise PermissionDenied
+
     if request.method == 'POST':
         form = SubjectForm(request.POST, instance=subject)
         if form.is_valid():
@@ -177,9 +183,28 @@ def subject_set_rating_view(request, subject_id, value):
 
 
 @login_required
+@require_POST
+def subject_set_color_view(request, subject_id):
+    """Setează culoarea unei materii (hex #RRGGBB). Doar pentru proprietar."""
+    subject = get_object_or_404(Subject, id=subject_id, user=request.user)
+    color = (request.POST.get('color') or '').strip()
+    if not color:
+        return JsonResponse({'success': False, 'error': 'Culoare lipsă'}, status=400)
+    if not re.match(r'^#[0-9a-fA-F]{6}$', color):
+        return JsonResponse({'success': False, 'error': 'Format culoare invalid (ex: #1A2B3C)'}, status=400)
+    subject.culoare = color
+    subject.save(update_fields=['culoare'])
+    return JsonResponse({'success': True, 'color': subject.culoare})
+
+
+@login_required
 def subject_delete_view(request, subject_id):
     """Ștergere materie"""
     subject = get_object_or_404(Subject, id=subject_id, user=request.user)
+
+    # Doar superadmin poate șterge materia
+    if not request.user.is_superuser:
+        raise PermissionDenied
 
     if request.method == 'POST':
         subject_name = subject.nume
