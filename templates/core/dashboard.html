@@ -25,12 +25,9 @@
         <div class="col-12">
             <div class="welcome-header d-flex align-items-center gap-3">
                 {% if profile.profile_image %}
-                <img src="{{ profile.profile_image.url }}" alt="avatar" class="rounded-circle" style="width:48px;height:48px;object-fit:cover;border:2px solid #fff;box-shadow:0 0 0 2px #e9ecef;">
+                <img src="{{ profile.profile_image.url }}" alt="avatar" class="rounded-circle" style="width:64px;height:64px;object-fit:cover;border:2px solid #fff;box-shadow:0 0 0 2px #e9ecef;">
                 {% endif %}
-                <h1 class="h3 mb-2">
-                    <i class="fas fa-sun text-warning me-2"></i>
-                    Bună, {{ user.get_full_name|default:user.username }}!
-                </h1>
+                <h1 class="h3 mb-2">Bună, {{ user.get_full_name|default:user.username }}!</h1>
                 <p class="text-muted mb-0">
                     Astăzi este {{ today|date:"l, d F Y" }}
                     {% if weekday_name %} • {{ weekday_name }}{% endif %}
