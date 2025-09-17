@@ -18,6 +18,8 @@ class StudentProfile(models.Model):
     scoala = models.CharField(max_length=200, blank=True)
     telefon_parinte = models.CharField(max_length=15, blank=True)
     email_parinte = models.EmailField(blank=True)
+    # Poză profil
+    profile_image = models.ImageField(upload_to='profiles/', blank=True, null=True)
 
     # Setari aplicatie
     ore_start = models.TimeField(default='08:00', help_text="Ora de început a programului școlar")

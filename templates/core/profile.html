@@ -7,13 +7,16 @@
     <div class="row justify-content-center">
         <div class="col-lg-8">
             <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white">
+                <div class="card-header bg-primary text-white d-flex align-items-center justify-content-between">
                     <h5 class="mb-0">Profilul meu</h5>
+                    {% if profile.profile_image %}
+                    <img src="{{ profile.profile_image.url }}" alt="avatar" class="rounded-circle" style="width:40px;height:40px;object-fit:cover;border:2px solid #fff;">
+                    {% endif %}
                 </div>
                 <div class="card-body">
                     <p class="text-muted mb-3">Actualizează detaliile profilului și preferințele pentru orar și notificări.</p>
 
-                    <form method="post" novalidate>
+                    <form method="post" enctype="multipart/form-data" novalidate>
                         {% csrf_token %}
 
                         {% if form.non_field_errors %}
@@ -25,6 +28,30 @@
                         {% endif %}
 
                         <div class="row g-3">
+                            <div class="col-12">
+                                {{ form.profile_image.label_tag }}
+                                {{ form.profile_image }}
+                                <small class="text-muted d-block">Formate acceptate: JPG, PNG, GIF. Max 10MB.</small>
+                            </div>
+                            {% if profile.profile_image %}
+                            <div class="col-12 d-flex align-items-center">
+                                <div class="form-check">
+                                    {{ form.remove_image }}
+                                    <label class="form-check-label" for="id_remove_image">Șterge poza actuală</label>
+                                </div>
+                            </div>
+                            {% endif %}
+                            <div class="col-md-6">
+                                {{ form.rotate_deg.label_tag }}
+                                {{ form.rotate_deg }}
+                            </div>
+                            <div class="col-md-6 d-flex align-items-center">
+                                <div class="form-check mt-4">
+                                    {{ form.crop_square }}
+                                    <label class="form-check-label" for="id_crop_square">Decupează pătrat</label>
+                                </div>
+                            </div>
+
                             <div class="col-md-4">
                                 {{ form.clasa.label_tag }}
                                 {{ form.clasa }}

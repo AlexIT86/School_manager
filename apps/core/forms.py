@@ -72,9 +72,20 @@ class UserRegistrationForm(UserCreationForm):
 class StudentProfileForm(forms.ModelForm):
     """Form pentru configurarea profilului de student"""
 
+    profile_image = forms.ImageField(required=False, label='Poză profil')
+    remove_image = forms.BooleanField(required=False, label='Șterge poza actuală', widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}))
+    rotate_deg = forms.ChoiceField(
+        required=False,
+        label='Rotește',
+        choices=[('', 'Nu roti'), ('90', '90°'), ('180', '180°'), ('270', '270°')],
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    crop_square = forms.BooleanField(required=False, label='Decupează pătrat (avatar)', widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}))
+
     class Meta:
         model = StudentProfile
         fields = [
+            'profile_image', 'remove_image', 'rotate_deg', 'crop_square',
             'clasa', 'class_room', 'scoala', 'telefon_parinte', 'email_parinte',
             'ore_start', 'durata_ora', 'durata_pauza', 'nr_ore_pe_zi',
             'reminder_teme', 'reminder_note', 'zile_reminder_teme'
@@ -152,6 +163,11 @@ class StudentProfileForm(forms.ModelForm):
 
         # Grupează câmpurile pentru organizare în template
         self.field_groups = [
+            {
+                'title': 'Poză de profil',
+                'fields': ['profile_image', 'rotate_deg', 'crop_square'],
+                'icon': 'fas fa-user-circle'
+            },
             {
                 'title': 'Informații personale',
                 'fields': ['clasa', 'scoala'],

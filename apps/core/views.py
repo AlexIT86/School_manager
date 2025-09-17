@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
@@ -281,34 +281,52 @@ def profile_view(request):
         profile = StudentProfile.objects.create(user=request.user)
 
     if request.method == 'POST':
-        form = StudentProfileForm(request.POST, instance=profile)
+        form = StudentProfileForm(request.POST, request.FILES, instance=profile)
         if form.is_valid():
-            form.save()
-            messages.success(request, 'Profilul a fost actualizat cu succes!')
-            # Email părinte la actualizare profil
-            if send_email:
+            # Handle remove image
+            if form.cleaned_data.get('remove_image'):
                 try:
-                    refreshed = request.user.student_profile
-                    parent_email = getattr(refreshed, 'email_parinte', '')
-                    if parent_email:
-                        send_email(
-                            to_emails=[parent_email],
-                            subject='Profil elev actualizat',
-                            html_content=f"""
-                            <p>Bună,</p>
-                            <p>Profilul elevului {request.user.get_full_name() or request.user.username} a fost actualizat.</p>
-                            <ul>
-                              <li>Clasa: {refreshed.clasa or '-'}</li>
-                              <li>Școala: {refreshed.scoala or '-'}</li>
-                              <li>Ora de început: {refreshed.ore_start}</li>
-                              <li>Reminder teme: {'activ' if refreshed.reminder_teme else 'inactiv'}</li>
-                              <li>Reminder note: {'activ' if refreshed.reminder_note else 'inactiv'}</li>
-                            </ul>
-                            <p>Vă mulțumim!</p>
-                            """
-                        )
+                    if profile.profile_image:
+                        profile.profile_image.delete(save=False)
+                    profile.profile_image = None
                 except Exception:
                     pass
+
+            profile = form.save()
+
+            # Post-procesare poză: rotire / decupare / redimensionare
+            rotate_deg = 0
+            try:
+                rotate_deg = int(form.cleaned_data.get('rotate_deg') or 0)
+            except Exception:
+                rotate_deg = 0
+            crop_square = bool(form.cleaned_data.get('crop_square') or False)
+
+            try:
+                if profile.profile_image and (rotate_deg or crop_square):
+                    from PIL import Image
+                    img_path = profile.profile_image.path
+                    with Image.open(img_path) as im:
+                        # Rotire (sens orar): Pillow folosește unghi anti-orar, deci -deg
+                        if rotate_deg in (90, 180, 270):
+                            im = im.rotate(-rotate_deg, expand=True)
+                        # Decupare pătrată din centru
+                        if crop_square:
+                            w, h = im.size
+                            side = min(w, h)
+                            left = (w - side) // 2
+                            top = (h - side) // 2
+                            im = im.crop((left, top, left + side, top + side))
+                        # Redimensionare la 256x256 (pentru avatar clar)
+                        im = im.convert('RGB')
+                        im = im.resize((256, 256))
+                        # Salvează peste fișierul existent
+                        im.save(img_path, quality=92)
+            except Exception:
+                # Ignoră problemele cu procesarea imaginii, dar continuă salvarea profilului
+                pass
+
+            messages.success(request, 'Profilul a fost actualizat cu succes!')
             return redirect('core:profile')
     else:
         form = StudentProfileForm(instance=profile)
