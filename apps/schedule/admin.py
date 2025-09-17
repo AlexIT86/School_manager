@@ -45,8 +45,8 @@ class ClassScheduleEntryInline(admin.TabularInline):
 
 @admin.register(ClassRoom)
 class ClassRoomAdmin(admin.ModelAdmin):
-    list_display = ['nume']
-    search_fields = ['nume']
+    list_display = ['nume', 'scoala', 'judet']
+    search_fields = ['nume', 'scoala', 'judet']
     inlines = [ClassScheduleEntryInline]
 
 

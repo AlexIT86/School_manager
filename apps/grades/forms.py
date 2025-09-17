@@ -23,7 +23,7 @@ class GradeForm(forms.ModelForm):
             'tip_evaluare': 'Tipul evaluării',
             'descriere': 'Descrierea evaluării',
             'data': 'Data',
-            'semestru': 'Semestrul',
+            'semestru': 'Modulul',
             'motivata': 'Absența este motivată',
             'data_motivare': 'Data motivării',
             'note_personale': 'Notițe personale',
@@ -59,7 +59,7 @@ class GradeForm(forms.ModelForm):
             'semestru': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'min': '1',
-                'max': '2'
+                'max': '5'
             }),
             'motivata': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
@@ -91,10 +91,23 @@ class GradeForm(forms.ModelForm):
         # Setează valori default
         if not self.instance.pk:
             self.fields['data'].initial = date.today()
-            # Determină semestrul curent
-            current_month = date.today().month
-            current_semester = 1 if current_month >= 9 or current_month <= 1 else 2
-            self.fields['semestru'].initial = current_semester
+            # Determină modulul curent (2025–2026: 5 module)
+            today = date.today()
+            try:
+                if date(2025, 9, 8) <= today <= date(2025, 10, 24):
+                    self.fields['semestru'].initial = 1
+                elif date(2025, 11, 3) <= today <= date(2025, 12, 19):
+                    self.fields['semestru'].initial = 2
+                elif date(2026, 1, 8) <= today <= date(2026, 2, 13):
+                    self.fields['semestru'].initial = 3
+                elif date(2026, 2, 23) <= today <= date(2026, 4, 3):
+                    self.fields['semestru'].initial = 4
+                elif date(2026, 4, 15) <= today <= date(2026, 6, 19):
+                    self.fields['semestru'].initial = 5
+                else:
+                    self.fields['semestru'].initial = 1
+            except Exception:
+                self.fields['semestru'].initial = 1
 
         # Organizează câmpurile în grupuri
         self.field_groups = [
@@ -164,21 +177,21 @@ class GradeForm(forms.ModelForm):
 
 
 class SemesterForm(forms.ModelForm):
-    """Form pentru gestionarea semestrelor"""
+    """Form pentru gestionarea modulelor"""
 
     class Meta:
         model = Semester
         fields = ['numar', 'an_scolar', 'data_inceput', 'data_sfarsit', 'activ']
         labels = {
-            'numar': 'Numărul semestrului',
+            'numar': 'Numărul modulului',
             'an_scolar': 'Anul școlar',
             'data_inceput': 'Data de început',
             'data_sfarsit': 'Data de sfârșit',
-            'activ': 'Semestru activ',
+            'activ': 'Modul activ',
         }
         widgets = {
             'numar': forms.Select(
-                choices=[(1, 'Semestrul 1'), (2, 'Semestrul 2')],
+                choices=[(1, 'Modulul 1'), (2, 'Modulul 2'), (3, 'Modulul 3'), (4, 'Modulul 4'), (5, 'Modulul 5')],
                 attrs={'class': 'form-control', 'required': True}
             ),
             'an_scolar': forms.TextInput(attrs={
@@ -204,27 +217,16 @@ class SemesterForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Setează valori default pentru semestru nou
+        # Setează valori default pentru modul nou
         if not self.instance.pk:
             current_year = date.today().year
             current_month = date.today().month
-
-            if current_month >= 9:  # An școlar nou începe în septembrie
-                self.fields['an_scolar'].initial = f"{current_year}-{current_year + 1}"
-                self.fields['numar'].initial = 1
-                self.fields['data_inceput'].initial = date(current_year, 9, 15)
-                self.fields['data_sfarsit'].initial = date(current_year + 1, 1, 31)
-            elif current_month <= 1:  # Încă în primul semestru
-                self.fields['an_scolar'].initial = f"{current_year - 1}-{current_year}"
-                self.fields['numar'].initial = 1
-            else:  # Al doilea semestru
-                self.fields['an_scolar'].initial = f"{current_year - 1}-{current_year}"
-                self.fields['numar'].initial = 2
-                self.fields['data_inceput'].initial = date(current_year, 2, 1)
-                self.fields['data_sfarsit'].initial = date(current_year, 6, 15)
+            # Defaultează pe anul școlar 2025–2026 cu module predefinite
+            self.fields['an_scolar'].initial = f"2025-2026"
+            self.fields['numar'].initial = 1
 
     def clean(self):
-        """Validări custom pentru semestru"""
+        """Validări custom pentru modul"""
         cleaned_data = super().clean()
         data_inceput = cleaned_data.get('data_inceput')
         data_sfarsit = cleaned_data.get('data_sfarsit')
@@ -244,7 +246,7 @@ class GradeGoalForm(forms.ModelForm):
         fields = ['subject', 'semester', 'media_dorita', 'descriere']
         labels = {
             'subject': 'Materia',
-            'semester': 'Semestrul',
+            'semester': 'Modulul',
             'media_dorita': 'Media dorită',
             'descriere': 'De ce această medie este importantă',
         }
@@ -285,7 +287,7 @@ class GradeGoalForm(forms.ModelForm):
                 user=user
             ).order_by('-an_scolar', '-numar')
 
-            # Setează semestrul activ ca default
+            # Setează modulul activ ca default
             active_semester = Semester.objects.filter(user=user, activ=True).first()
             if active_semester and not self.instance.pk:
                 self.fields['semester'].initial = active_semester
@@ -327,7 +329,7 @@ class GradeFilterForm(forms.Form):
     semester = forms.ChoiceField(
         required=False,
         widget=forms.Select(attrs={'class': 'form-control'}),
-        label='Semestrul'
+        label='Modulul'
     )
 
     date_range = forms.ChoiceField(
@@ -375,9 +377,9 @@ class GradeFilterForm(forms.Form):
                 activa=True
             ).order_by('nume')
 
-            # Populează opțiunile pentru semestru
-            semester_choices = [('', 'Toate semestrele')]
-            semester_choices.extend([(1, 'Semestrul 1'), (2, 'Semestrul 2')])
+            # Populează opțiunile pentru modul
+            semester_choices = [('', 'Toate modulele')]
+            semester_choices.extend([(1, 'Modulul 1'), (2, 'Modulul 2'), (3, 'Modulul 3'), (4, 'Modulul 4'), (5, 'Modulul 5')])
             self.fields['semester'].choices = semester_choices
 
 
@@ -439,7 +441,7 @@ class BulkGradeActionForm(forms.Form):
 
     ACTION_CHOICES = [
         ('delete', 'Șterge notele/absențele selectate'),
-        ('change_semester', 'Schimbă semestrul'),
+        ('change_semester', 'Schimbă modulul'),
         ('mark_important', 'Marchează ca importante'),
         ('unmark_important', 'Elimină marcajul important'),
         ('excuse_absences', 'Motivează absențele selectate'),
@@ -458,10 +460,10 @@ class BulkGradeActionForm(forms.Form):
 
     # Câmpuri condiționale
     new_semester = forms.ChoiceField(
-        choices=[(1, 'Semestrul 1'), (2, 'Semestrul 2')],
+        choices=[(1, 'Modulul 1'), (2, 'Modulul 2'), (3, 'Modulul 3'), (4, 'Modulul 4'), (5, 'Modulul 5')],
         required=False,
         widget=forms.Select(attrs={'class': 'form-control'}),
-        label='Noul semestru'
+        label='Noul modul'
     )
 
     def clean_selected_grades(self):
@@ -481,7 +483,7 @@ class BulkGradeActionForm(forms.Form):
         action = cleaned_data.get('action')
 
         if action == 'change_semester' and not cleaned_data.get('new_semester'):
-            raise forms.ValidationError('Trebuie să selectezi noul semestru.')
+            raise forms.ValidationError('Trebuie să selectezi noul modul.')
 
         return cleaned_data
 
@@ -496,7 +498,7 @@ class GradeImportForm(forms.Form):
             'accept': '.csv,.xlsx,.xls'
         }),
         label='Fișier import',
-        help_text='Format acceptat: CSV sau Excel cu coloane: Materie, Tip, Valoare, Data, Semestru, Descriere'
+        help_text='Format acceptat: CSV sau Excel cu coloane: Materie, Tip, Valoare, Data, Modul, Descriere'
     )
 
     overwrite_existing = forms.BooleanField(
@@ -561,13 +563,16 @@ class GradeExportForm(forms.Form):
 
     semester_filter = forms.ChoiceField(
         choices=[
-            ('all', 'Toate semestrele'),
-            ('1', 'Doar semestrul 1'),
-            ('2', 'Doar semestrul 2'),
+            ('all', 'Toate modulele'),
+            ('1', 'Doar modulul 1'),
+            ('2', 'Doar modulul 2'),
+            ('3', 'Doar modulul 3'),
+            ('4', 'Doar modulul 4'),
+            ('5', 'Doar modulul 5'),
         ],
         initial='all',
         widget=forms.Select(attrs={'class': 'form-control'}),
-        label='Filtrare semestru'
+        label='Filtrare modul'
     )
 
     date_from = forms.DateField(
@@ -640,7 +645,7 @@ class GradeAnalysisForm(forms.Form):
     ANALYSIS_TYPE_CHOICES = [
         ('trend', 'Tendința notelor în timp'),
         ('subject_comparison', 'Comparație între materii'),
-        ('semester_comparison', 'Comparație între semestre'),
+        ('semester_comparison', 'Comparație între module'),
         ('grade_distribution', 'Distribuția notelor'),
         ('absence_pattern', 'Paternul absențelor'),
     ]

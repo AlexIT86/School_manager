@@ -58,8 +58,8 @@ class Grade(models.Model):
     # Data și context
     data = models.DateField(default=date.today, help_text="Data când s-a primit nota/absența")
     semestru = models.PositiveIntegerField(
-        validators=[MinValueValidator(1), MaxValueValidator(2)],
-        help_text="Semestrul (1 sau 2)"
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
+        help_text="Modulul (1–5)"
     )
 
     # Pentru absențe
@@ -145,12 +145,12 @@ class Grade(models.Model):
 
 class Semester(models.Model):
     """
-    Configurație pentru semestre
+    Configurație pentru module (1–5)
     """
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='semesters')
 
-    # Detalii semestru
-    numar = models.PositiveIntegerField(validators=[MinValueValidator(1), MaxValueValidator(2)])
+    # Detalii modul
+    numar = models.PositiveIntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
     an_scolar = models.CharField(max_length=10, help_text="Ex: 2024-2025")
 
     # Perioade
@@ -158,30 +158,30 @@ class Semester(models.Model):
     data_sfarsit = models.DateField()
 
     # Status
-    activ = models.BooleanField(default=False, help_text="Semestrul activ în prezent")
+    activ = models.BooleanField(default=False, help_text="Modulul activ în prezent")
 
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        verbose_name = "Semestru"
-        verbose_name_plural = "Semestre"
+        verbose_name = "Modul"
+        verbose_name_plural = "Module"
         ordering = ['-an_scolar', '-numar']
         unique_together = ['user', 'numar', 'an_scolar']
 
     def __str__(self):
-        return f"Semestrul {self.numar} - {self.an_scolar}"
+        return f"Modulul {self.numar} - {self.an_scolar}"
 
     def save(self, *args, **kwargs):
-        # Dacă se marchează ca activ, dezactivează toate celelalte semestre
+        # Dacă se marchează ca activ, dezactivează toate celelalte module
         if self.activ:
             Semester.objects.filter(user=self.user).update(activ=False)
         super().save(*args, **kwargs)
 
     @property
     def este_in_desfasurare(self):
-        """Verifică dacă semestrul este în desfășurare"""
+        """Verifică dacă modulul este în desfășurare"""
         today = date.today()
         return self.data_inceput <= today <= self.data_sfarsit
 

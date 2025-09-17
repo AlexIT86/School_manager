@@ -20,49 +20,79 @@ except Exception:
     send_email = None
 
 
+def _ensure_modules_2025_2026(user):
+    """Creează/actualizează modulele 1–5 pentru anul școlar 2025–2026 pentru utilizator.
+    Modulul 3/4 se ajustează în funcție de județul clasei elevului (vacanța mobilă din februarie).
+    Dacă județul lipsește, se folosește varianta mediană (încheiere 13 feb, reluare 23 feb).
+    """
+    # Determină județul (dacă există) din clasa profilului elevului
+    judet = None
+    try:
+        profile = getattr(user, 'student_profile', None)
+        if profile and profile.class_room and profile.class_room.judet:
+            judet = profile.class_room.judet.strip()
+    except Exception:
+        judet = None
+
+    grupa1 = {'Cluj', 'Timiș', 'Bistrița-Năsăud'}  # 9-15 feb
+    grupa2 = {
+        'București', 'Ilfov', 'Sălaj', 'Bihor', 'Arad', 'Iași', 'Hunedoara', 'Brașov',
+        'Caraș-Severin', 'Gorj', 'Vâlcea', 'Argeș', 'Dâmbovița', 'Prahova', 'Buzău',
+        'Tulcea', 'Mehedinți', 'Dolj', 'Olt', 'Teleorman', 'Ialomița', 'Călărași'
+    }  # 16-22 feb
+    grupa3 = {
+        'Satu-Mare', 'Maramureș', 'Suceava', 'Botoșani', 'Alba', 'Sibiu', 'Mureș',
+        'Harghita', 'Neamț', 'Covasna', 'Bacău', 'Vrancea', 'Vaslui', 'Galați',
+        'Brăila', 'Giurgiu', 'Constanța'
+    }  # 23 feb - 1 mar
+
+    # Datele implicite (varianta mediană)
+    end_m3 = date(2026, 2, 13)
+    start_m4 = date(2026, 2, 23)
+    if judet in grupa1:
+        end_m3 = date(2026, 2, 6)
+        start_m4 = date(2026, 2, 16)
+    elif judet in grupa3:
+        end_m3 = date(2026, 2, 20)
+        start_m4 = date(2026, 3, 2)
+
+    modules = [
+        (1, date(2025, 9, 8),  date(2025, 10, 24)),
+        (2, date(2025, 11, 3), date(2025, 12, 19)),
+        (3, date(2026, 1, 8),  end_m3),
+        (4, start_m4,          date(2026, 4, 3)),
+        (5, date(2026, 4, 15), date(2026, 6, 19)),
+    ]
+    for numar, start, end in modules:
+        obj, created = Semester.objects.update_or_create(
+            user=user, an_scolar='2025-2026', numar=numar,
+            defaults={'data_inceput': start, 'data_sfarsit': end}
+        )
+    return Semester.objects.filter(user=user, an_scolar='2025-2026').order_by('numar')
+
+
 @login_required
 def grades_overview_view(request):
     """Vedere generală pentru note și absențe"""
     user = request.user
 
-    # Semestrul activ - determinare corectă după calendar școlar (Sem 1: Sep–Jan, Sem 2: Feb–Jun)
     today = date.today()
-    current_year = today.year
-    current_month = today.month
+    # Asigură modulele 2025–2026
+    user_modules = _ensure_modules_2025_2026(user)
 
-    # Determină numărul și anul școlar curent
-    if current_month >= 9 or current_month <= 1:
-        desired_sem_num = 1
-        start_year = current_year if current_month >= 9 else current_year - 1
-        an_scolar = f"{start_year}-{start_year + 1}"
-        data_inceput = date(start_year, 9, 15)
-        data_sfarsit = date(start_year + 1, 1, 31)
-    else:
-        desired_sem_num = 2
-        start_year = current_year - 1  # semestrul 2 aparține aceluiași an școlar început în toamnă
-        an_scolar = f"{start_year}-{start_year + 1}"
-        data_inceput = date(current_year, 2, 1)
-        data_sfarsit = date(current_year, 6, 15)
-
-    active_semester = Semester.objects.filter(user=user, activ=True).first()
-
-    # Dacă nu există sau nu corespunde cu semestrul curent, activează/creează cel corect
-    if not active_semester or active_semester.numar != desired_sem_num or active_semester.an_scolar != an_scolar:
-        active_semester = Semester.objects.filter(user=user, numar=desired_sem_num, an_scolar=an_scolar).first()
-        if not active_semester:
-            active_semester = Semester.objects.create(
-                user=user,
-                numar=desired_sem_num,
-                an_scolar=an_scolar,
-                data_inceput=data_inceput,
-                data_sfarsit=data_sfarsit,
-                activ=True
-            )
-        else:
-            # Marchează ca activ și dezactivează celelalte
-            Semester.objects.filter(user=user).update(activ=False)
-            active_semester.activ = True
-            active_semester.save()
+    # Alege modulul activ pe baza datei curente
+    active_semester = None
+    for m in user_modules:
+        if m.data_inceput <= today <= m.data_sfarsit:
+            active_semester = m
+            break
+    if not active_semester:
+        # fallback: primul modul din 2025–2026
+        active_semester = user_modules.first()
+    if active_semester:
+        Semester.objects.filter(user=user).update(activ=False)
+        active_semester.activ = True
+        active_semester.save()
 
     # Note recente (ultimele 10)
     recent_grades = Grade.objects.filter(
@@ -206,16 +236,9 @@ def grade_create_view(request):
                 if not semester_obj:
                     semester_obj = Semester.objects.filter(user=request.user, numar=grade.semestru).order_by('-an_scolar').first()
                 if not semester_obj:
-                    # Creează un semestru minim dacă lipsește
-                    current_year = date.today().year
-                    semester_obj = Semester.objects.create(
-                        user=request.user,
-                        numar=grade.semestru,
-                        an_scolar=f"{current_year}-{current_year + 1}",
-                        data_inceput=date(current_year, 9, 15) if grade.semestru == 1 else date(current_year, 2, 1),
-                        data_sfarsit=date(current_year + (1 if grade.semestru == 1 else 0), 1 if grade.semestru == 1 else 6, 31 if grade.semestru == 1 else 15),
-                        activ=False
-                    )
+                    # Asigură modulele 2025–2026 și ia modulul corespunzător
+                    user_modules = _ensure_modules_2025_2026(request.user)
+                    semester_obj = user_modules.filter(numar=grade.semestru).first()
 
                 stats, created = SubjectGradeStats.objects.get_or_create(
                     user=request.user,
@@ -724,8 +747,19 @@ def quick_grade_entry(request):
 
             subject = Subject.objects.get(id=subject_id, user=request.user)
 
-            # Determină semestrul activ
+            # Determină modulul activ (creează module dacă lipsesc)
             active_semester = Semester.objects.filter(user=request.user, activ=True).first()
+            if not active_semester:
+                user_modules = _ensure_modules_2025_2026(request.user)
+                today = date.today()
+                for m in user_modules:
+                    if m.data_inceput <= today <= m.data_sfarsit:
+                        active_semester = m
+                        break
+                if active_semester:
+                    Semester.objects.filter(user=request.user).update(activ=False)
+                    active_semester.activ = True
+                    active_semester.save()
             semester_num = active_semester.numar if active_semester else 1
 
             grade = Grade.objects.create(

@@ -369,15 +369,15 @@
                 <div class="col-md-8">
                     <h6 class="mb-1">
                         <i class="fas fa-calendar-alt me-2"></i>
-                        {{ active_semester }}
+                        Modulul {{ active_semester.numar }} · {{ active_semester.an_scolar }}
                     </h6>
                     <small class="opacity-75">
                         {{ active_semester.data_inceput|date:"d.m.Y" }} - {{ active_semester.data_sfarsit|date:"d.m.Y" }}
                     </small>
                 </div>
                 <div class="col-md-4 text-md-end">
-                    <a href="{% url 'grades:semesters' %}" class="btn btn-sm btn-outline-light">
-                        <i class="fas fa-cog me-1"></i>Gestionează semestre
+                    <a href="{% url 'grades:semesters' %}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-cog me-1"></i>Gestionează module
                     </a>
                 </div>
             </div>
@@ -485,7 +485,7 @@
                     {% else %}
                     <div class="empty-state">
                         <i class="fas fa-chart-line"></i>
-                        <h5>Nu există date pentru acest semestru</h5>
+                        <h5>Nu există date pentru acest modul</h5>
                         <p>Adaugă prima notă pentru a vedea statistici.</p>
                         <a href="{% url 'grades:create' %}" class="btn btn-primary">
                             <i class="fas fa-plus me-2"></i>Adaugă prima notă

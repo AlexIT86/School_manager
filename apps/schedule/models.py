@@ -89,6 +89,7 @@ class ClassRoom(models.Model):
     """
     nume = models.CharField(max_length=20, unique=True, help_text="Ex: 6A, 7B")
     scoala = models.CharField(max_length=200, blank=True)
+    judet = models.CharField(max_length=50, blank=True, help_text="Județul școlii (ex: București, Cluj)")
     diriginte = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='classes_led')
     descriere = models.TextField(blank=True)
 

@@ -6,6 +6,17 @@ from .models import ScheduleEntry, ScheduleTemplate, ScheduleChange, ClassRoom, 
 from apps.subjects.models import Subject
 
 
+# Listă județe pentru selecție (ordonată alfabetic)
+JUDETE = sorted([
+    'Alba', 'Arad', 'Argeș', 'Bacău', 'Bihor', 'Bistrița-Năsăud', 'Botoșani', 'Brașov',
+    'Brăila', 'București', 'Buzău', 'Călărași', 'Caraș-Severin', 'Cluj', 'Constanța',
+    'Covasna', 'Dâmbovița', 'Dolj', 'Galați', 'Giurgiu', 'Gorj', 'Harghita', 'Hunedoara',
+    'Ialomița', 'Iași', 'Ilfov', 'Maramureș', 'Mehedinți', 'Mureș', 'Neamț', 'Olt',
+    'Prahova', 'Sălaj', 'Satu-Mare', 'Sibiu', 'Suceava', 'Teleorman', 'Timiș', 'Tulcea',
+    'Vâlcea', 'Vaslui', 'Vrancea'
+])
+
+
 class ScheduleEntryForm(forms.ModelForm):
     """Form pentru crearea și editarea intrărilor din orar"""
 
@@ -610,16 +621,18 @@ class ClassRoomForm(forms.ModelForm):
 
     class Meta:
         model = ClassRoom
-        fields = ['nume', 'scoala', 'diriginte', 'descriere']
+        fields = ['nume', 'scoala', 'judet', 'diriginte', 'descriere']
         labels = {
             'nume': 'Clasa',
             'scoala': 'Școala',
+            'judet': 'Județul',
             'diriginte': 'Diriginte (utilizator)',
             'descriere': 'Descriere',
         }
         widgets = {
             'nume': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'ex: 6A', 'required': True}),
             'scoala': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'ex: Liceul ...'}),
+            'judet': forms.Select(choices=[('', '— Alege județul —')] + [(j, j) for j in JUDETE], attrs={'class': 'form-control', 'required': True}),
             'diriginte': forms.Select(attrs={'class': 'form-control'}),
             'descriere': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
