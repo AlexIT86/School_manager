@@ -8,9 +8,13 @@ from django.utils import timezone
 from datetime import date, time, datetime, timedelta
 import json
 
-from .models import ScheduleEntry, ScheduleTemplate, ScheduleTemplateEntry, ScheduleChange
+from .models import ScheduleEntry, ScheduleTemplate, ScheduleTemplateEntry, ScheduleChange, ClassRoom, ClassScheduleEntry
 from apps.homework.models import Homework
-from .forms import ScheduleEntryForm, ScheduleTemplateForm, ScheduleChangeForm, ScheduleImportForm
+from .forms import (
+    ScheduleEntryForm, ScheduleTemplateForm, ScheduleChangeForm, ScheduleImportForm,
+    ClassRoomForm, ClassScheduleEntryForm
+)
+from django.core.exceptions import PermissionDenied
 from apps.subjects.models import Subject
 from apps.core.models import Notification
 from apps.grades.models import Grade
@@ -753,3 +757,151 @@ def render_schedule_entry_html(entry):
         {f'<br><small>Sala: {entry.sala}</small>' if entry.sala else ''}
     </div>
     """
+
+
+# --- Clase și orar pe clasă (admin intern - protejăm în UI pentru superadmin) ---
+@login_required
+def classroom_list_view(request):
+    if not request.user.is_superuser:
+        raise PermissionDenied
+    classes = ClassRoom.objects.all().order_by('nume')
+    return render(request, 'schedule/classes.html', {'classes': classes})
+
+
+@login_required
+def classroom_create_view(request):
+    if not request.user.is_superuser:
+        raise PermissionDenied
+    if request.method == 'POST':
+        form = ClassRoomForm(request.POST)
+        if form.is_valid():
+            classroom = form.save()
+            messages.success(request, f'Clasa {classroom.nume} a fost creată!')
+            return redirect('schedule:classes')
+    else:
+        form = ClassRoomForm()
+    return render(request, 'schedule/schedule_form.html', {'form': form, 'title': 'Creare clasă'})
+
+
+@login_required
+def classroom_edit_view(request, class_id):
+    if not request.user.is_superuser:
+        raise PermissionDenied
+    classroom = get_object_or_404(ClassRoom, id=class_id)
+    if request.method == 'POST':
+        form = ClassRoomForm(request.POST, instance=classroom)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Clasa {classroom.nume} a fost actualizată!')
+            return redirect('schedule:classes')
+    else:
+        form = ClassRoomForm(instance=classroom)
+    return render(request, 'schedule/schedule_form.html', {'form': form, 'title': f'Editează clasa {classroom.nume}'})
+
+
+@login_required
+def classroom_delete_view(request, class_id):
+    if not request.user.is_superuser:
+        raise PermissionDenied
+    classroom = get_object_or_404(ClassRoom, id=class_id)
+    if request.method == 'POST':
+        name = classroom.nume
+        classroom.delete()
+        messages.success(request, f'Clasa {name} a fost ștearsă!')
+        return redirect('schedule:classes')
+    return render(request, 'schedule/template_delete.html', {'template': classroom})
+
+
+@login_required
+def class_schedule_view(request, class_id):
+    if not request.user.is_superuser:
+        raise PermissionDenied
+    classroom = get_object_or_404(ClassRoom, id=class_id)
+    weekdays = ['Luni', 'Marți', 'Miercuri', 'Joi', 'Vineri']
+    data = {}
+    for day_num in range(1, 6):
+        entries = ClassScheduleEntry.objects.filter(class_room=classroom, zi_saptamana=day_num).order_by('numar_ora')
+        data[weekdays[day_num - 1]] = list(entries)
+    return render(request, 'schedule/class_schedule.html', {
+        'classroom': classroom,
+        'schedule_data': data,
+        'weekdays': weekdays,
+    })
+
+
+@login_required
+def class_schedule_import_from_user(request, class_id):
+    """Importă orarul utilizatorului curent ca template de clasă (doar superadmin)."""
+    if not request.user.is_superuser:
+        raise PermissionDenied
+    classroom = get_object_or_404(ClassRoom, id=class_id)
+
+    # Șterge orarul de clasă existent
+    ClassScheduleEntry.objects.filter(class_room=classroom).delete()
+
+    # Copiază din orarul userului curent
+    entries = ScheduleEntry.objects.filter(user=request.user).order_by('zi_saptamana', 'numar_ora')
+    for e in entries:
+        ClassScheduleEntry.objects.create(
+            class_room=classroom,
+            zi_saptamana=e.zi_saptamana,
+            numar_ora=e.numar_ora,
+            ora_inceput=e.ora_inceput,
+            ora_sfarsit=e.ora_sfarsit,
+            subject_name=e.subject.nume,
+            subject_color=e.subject.culoare,
+            sala=e.sala,
+            note=e.note,
+            tip_ora=e.tip_ora,
+        )
+
+    messages.success(request, f'Orarul tău a fost importat pentru clasa {classroom.nume}.')
+    return redirect('schedule:class_schedule', class_id=classroom.id)
+
+
+@login_required
+def class_schedule_entry_create_view(request, class_id):
+    if not request.user.is_superuser:
+        raise PermissionDenied
+    classroom = get_object_or_404(ClassRoom, id=class_id)
+    if request.method == 'POST':
+        form = ClassScheduleEntryForm(request.POST)
+        if form.is_valid():
+            entry = form.save(commit=False)
+            entry.class_room = classroom
+            entry.save()
+            messages.success(request, 'Ora a fost adăugată în orarul clasei!')
+            return redirect('schedule:class_schedule', class_id=classroom.id)
+    else:
+        form = ClassScheduleEntryForm()
+    return render(request, 'schedule/entry_form.html', {'form': form, 'title': f'Adaugă oră pentru {classroom.nume}'})
+
+
+@login_required
+def class_schedule_entry_edit_view(request, class_id, entry_id):
+    if not request.user.is_superuser:
+        raise PermissionDenied
+    classroom = get_object_or_404(ClassRoom, id=class_id)
+    entry = get_object_or_404(ClassScheduleEntry, id=entry_id, class_room=classroom)
+    if request.method == 'POST':
+        form = ClassScheduleEntryForm(request.POST, instance=entry)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Ora a fost actualizată!')
+            return redirect('schedule:class_schedule', class_id=classroom.id)
+    else:
+        form = ClassScheduleEntryForm(instance=entry)
+    return render(request, 'schedule/entry_form.html', {'form': form, 'title': f'Editează oră pentru {classroom.nume}'})
+
+
+@login_required
+def class_schedule_entry_delete_view(request, class_id, entry_id):
+    if not request.user.is_superuser:
+        raise PermissionDenied
+    classroom = get_object_or_404(ClassRoom, id=class_id)
+    entry = get_object_or_404(ClassScheduleEntry, id=entry_id, class_room=classroom)
+    if request.method == 'POST':
+        entry.delete()
+        messages.success(request, 'Ora a fost ștearsă!')
+        return redirect('schedule:class_schedule', class_id=classroom.id)
+    return render(request, 'schedule/entry_delete.html', {'entry': entry})

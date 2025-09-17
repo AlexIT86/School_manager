@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.utils import timezone
 
 
 class StudentProfile(models.Model):
@@ -12,6 +13,8 @@ class StudentProfile(models.Model):
 
     # Informatii personale
     clasa = models.CharField(max_length=10, help_text="Ex: 6A, 7B, etc.")
+    # Legătură opțională la o clasă definită global (cu orar comun)
+    class_room = models.ForeignKey('schedule.ClassRoom', on_delete=models.SET_NULL, null=True, blank=True, related_name='students')
     scoala = models.CharField(max_length=200, blank=True)
     telefon_parinte = models.CharField(max_length=15, blank=True)
     email_parinte = models.EmailField(blank=True)
@@ -26,6 +29,18 @@ class StudentProfile(models.Model):
     reminder_teme = models.BooleanField(default=True, help_text="Notificări pentru teme")
     reminder_note = models.BooleanField(default=True, help_text="Notificări pentru note noi")
     zile_reminder_teme = models.IntegerField(default=1, help_text="Cu câte zile înainte să anunțe temele")
+
+    # Aprobare înregistrare (de către superadmin)
+    approved = models.BooleanField(default=False, help_text="Contul a fost aprobat de un administrator")
+    approved_at = models.DateTimeField(blank=True, null=True)
+    approved_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='approved_students',
+        help_text="Administratorul care a aprobat contul"
+    )
 
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)

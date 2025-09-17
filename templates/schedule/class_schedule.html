@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block title %}Orar clasă {{ classroom.nume }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="mb-0">Orar - {{ classroom.nume }}</h5>
+    <div class="btn-group">
+      <a href="{% url 'schedule:class_schedule_entry_create' classroom.id %}" class="btn btn-primary"><i class="fas fa-plus me-1"></i>Adaugă oră</a>
+      {% if request.user.is_superuser %}
+      <a href="{% url 'schedule:class_schedule_import_from_user' classroom.id %}" class="btn btn-outline-secondary" onclick="return confirm('Importă orarul tău în această clasă? Orarul existent va fi înlocuit.');">
+        <i class="fas fa-upload me-1"></i>Importă din orarul meu
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="row g-3">
+    {% for day_name, entries in schedule_data.items %}
+    <div class="col-md-6 col-lg-4">
+      <div class="card h-100 shadow-sm">
+        <div class="card-header bg-light fw-semibold">{{ day_name }}</div>
+        <ul class="list-group list-group-flush">
+          {% for e in entries %}
+          <li class="list-group-item">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <span class="badge" style="background-color: {{ e.subject_color }}">&nbsp;</span>
+                <strong class="ms-2">{{ e.subject_name }}</strong>
+                <div class="small text-muted">{{ e.ora_inceput|time:'H:i' }} - {{ e.ora_sfarsit|time:'H:i' }} {% if e.sala %}• Sala {{ e.sala }}{% endif %}</div>
+              </div>
+              <div class="ms-2 text-nowrap">
+                <a href="{% url 'schedule:class_schedule_entry_edit' classroom.id e.id %}" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a>
+                <form method="post" action="{% url 'schedule:class_schedule_entry_delete' classroom.id e.id %}" class="d-inline">
+                  {% csrf_token %}
+                  <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Ștergi ora?');"><i class="fas fa-trash"></i></button>
+                </form>
+              </div>
+            </div>
+          </li>
+          {% empty %}
+          <li class="list-group-item text-muted">Fără ore.</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

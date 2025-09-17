@@ -12,6 +12,7 @@ urlpatterns = [
     ), name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('register/', views.register_view, name='register'),
+    path('await-approval/', views.await_approval_view, name='await_approval'),
 
     # Dashboard și profil
     path('dashboard/', views.dashboard_view, name='dashboard'),
@@ -25,6 +26,14 @@ urlpatterns = [
     # Statistici și overview
     path('stats/', views.quick_stats_view, name='quick_stats'),
     path('calendar/', views.calendar_overview, name='calendar_overview'),
+
+    # Role management (superadmin only UI) - evitate coliziuni cu Django Admin
+    path('superadmin/roles/', views.roles_overview_view, name='roles_overview'),
+    path('superadmin/roles/assign/', views.assign_roles_view, name='assign_roles'),
+
+    # Approvals (superadmin)
+    path('superadmin/approvals/', views.approvals_list_view, name='approvals'),
+    path('superadmin/approvals/<int:profile_id>/approve/', views.approve_profile_view, name='approve_profile'),
 
     # Password reset
     path('password_reset/', auth_views.PasswordResetView.as_view(

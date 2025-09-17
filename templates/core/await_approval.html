@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Așteptare aprobare - School Manager{% endblock %}
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card shadow-sm">
+        <div class="card-body p-4">
+          <h3 class="card-title mb-3"><i class="fas fa-hourglass-half me-2"></i>Cont în așteptare</h3>
+          <p class="text-muted">Contul tău este în așteptarea aprobării de către un administrator. Vei primi acces complet imediat după aprobare.</p>
+
+          <ul class="list-group list-group-flush mb-3">
+            <li class="list-group-item">Utilizator: <strong>{{ request.user.username }}</strong></li>
+            <li class="list-group-item">Școala: <strong>{{ profile.scoala|default:'-' }}</strong></li>
+            <li class="list-group-item">Clasa: <strong>{{ profile.clasa|default:profile.class_room.nume|default:'-' }}</strong></li>
+          </ul>
+
+          <a href="{% url 'core:logout' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-sign-out-alt me-2"></i>Deconectare
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

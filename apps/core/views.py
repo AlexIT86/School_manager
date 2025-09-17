@@ -14,6 +14,10 @@ from apps.homework.models import Homework
 from apps.grades.models import Grade, SubjectGradeStats
 from apps.schedule.models import ScheduleEntry
 from django.conf import settings
+from apps.schedule.models import apply_class_schedule_to_user
+from django.contrib.auth.models import Group, Permission, User
+from django.core.exceptions import PermissionDenied
+from django.urls import reverse
 
 try:
     from .email_utils import send_email
@@ -31,28 +35,47 @@ def register_view(request):
         if form.is_valid():
             user = form.save()
             username = form.cleaned_data.get('username')
-            messages.success(request, f'Contul pentru {username} a fost creat cu succes!')
+
+            # Completează profilul cu școala și clasa selectate; marchează ca neaprobat
+            try:
+                profile = user.student_profile
+            except StudentProfile.DoesNotExist:
+                profile = StudentProfile.objects.create(user=user)
+
+            profile.scoala = form.cleaned_data.get('scoala') or ''
+            class_room = form.cleaned_data.get('class_room')
+            if class_room:
+                profile.class_room = class_room
+                # Setează și câmpul text "clasa" din numele clasei
+                if not profile.clasa:
+                    profile.clasa = class_room.nume
+
+            profile.approved = False
+            profile.save()
+
+            messages.success(request, f'Contul pentru {username} a fost creat. Așteaptă aprobarea administratorului.')
 
             # Trimite email de bun venit (daca este configurat SendGrid)
             if send_email and settings.SENDGRID_API_KEY and user.email:
                 try:
                     send_email(
                         to_emails=[user.email],
-                        subject='Bun venit în School Manager',
+                        subject='Cont creat - în așteptarea aprobării',
                         html_content=f"""
                         <p>Bun venit, {user.first_name or user.username}!</p>
-                        <p>Contul tău a fost creat cu succes. Spor la folosirea aplicației!</p>
+                        <p>Contul tău a fost creat și este în așteptarea aprobării de către un administrator.</p>
+                        <p>Vei primi acces la orar și toate funcționalitățile imediat după aprobare.</p>
                         <p>Cu drag,<br>School Manager</p>
                         """
                     )
                 except Exception:
                     pass
 
-            # Autentificare automată
+            # Autentificare automată și redirect la pagina de așteptare aprobare
             user = authenticate(username=username, password=form.cleaned_data.get('password1'))
             if user:
                 login(request, user)
-                return redirect('core:profile_setup')
+                return redirect('core:await_approval')
     else:
         form = UserRegistrationForm()
 
@@ -70,8 +93,16 @@ def profile_setup_view(request):
     if request.method == 'POST':
         form = StudentProfileForm(request.POST, instance=profile)
         if form.is_valid():
-            form.save()
+            profile = form.save()
             messages.success(request, 'Profilul a fost configurat cu succes!')
+            # Dacă s-a selectat o clasă globală și elevul nu are orar încă, copiază orarul clasei
+            try:
+                if getattr(profile, 'class_room', None):
+                    created_count = apply_class_schedule_to_user(profile.class_room, request.user)
+                    if created_count > 0:
+                        messages.success(request, f'Orarul clasei {profile.class_room.nume} a fost preluat ({created_count} ore).')
+            except Exception:
+                pass
             # Email părinte la configurare profil
             if send_email:
                 try:
@@ -104,6 +135,21 @@ def profile_setup_view(request):
 
 
 @login_required
+def await_approval_view(request):
+    """Pagină de așteptare până la aprobarea contului de către administrator."""
+    try:
+        profile = request.user.student_profile
+    except StudentProfile.DoesNotExist:
+        return redirect('core:profile_setup')
+
+    # Dacă a fost aprobat între timp, du-l în dashboard
+    if getattr(profile, 'approved', False):
+        return redirect('core:dashboard')
+
+    return render(request, 'core/await_approval.html', { 'profile': profile })
+
+
+@login_required
 def dashboard_view(request):
     """Dashboard principal - pagina de start"""
     user = request.user
@@ -116,6 +162,10 @@ def dashboard_view(request):
             return redirect('core:profile_setup')
     except StudentProfile.DoesNotExist:
         return redirect('core:profile_setup')
+
+    # Dacă nu este aprobat încă, redirecționează la pagina de așteptare
+    if not getattr(profile, 'approved', True):
+        return redirect('core:await_approval')
 
     # Statistici generale
     total_subjects = Subject.objects.filter(user=user, activa=True).count()
@@ -379,3 +429,158 @@ def calendar_overview(request):
     }
 
     return render(request, 'core/calendar_overview.html', context)
+
+
+@login_required
+def roles_overview_view(request):
+    """UI simplă pentru administrarea rolurilor și permisiunilor (doar superadmin)."""
+    if not request.user.is_superuser:
+        raise PermissionDenied
+
+    # Asigură existența grupurilor implicite
+    for name in ['Elev', 'Părinte', 'Diriginte', 'Superadmin']:
+        Group.objects.get_or_create(name=name)
+
+    groups = Group.objects.all().order_by('name')
+    users = User.objects.all().order_by('username')
+
+    # Grupare permisiuni pe "meniuri" (aplicații principale din navbar)
+    menu_to_apps = {
+        'Dashboard/Core': ['core'],
+        'Materii': ['subjects'],
+        'Orar': ['schedule'],
+        'Teme': ['homework'],
+        'Note': ['grades'],
+    }
+
+    grouped_permissions = []
+    for menu_name, app_labels in menu_to_apps.items():
+        perms = Permission.objects.filter(content_type__app_label__in=app_labels).order_by('content_type__model', 'codename')
+        grouped_permissions.append({
+            'menu': menu_name,
+            'app_labels': app_labels,
+            'permissions': perms,
+        })
+
+    # Selectează grupul curent
+    selected_group_id = request.GET.get('group')
+    try:
+        selected_group = Group.objects.get(id=int(selected_group_id)) if selected_group_id else groups.first()
+    except Exception:
+        selected_group = groups.first()
+
+    assigned_perm_ids = set()
+    if selected_group:
+        assigned_perm_ids = set(selected_group.permissions.values_list('id', flat=True))
+
+    context = {
+        'groups': groups,
+        'users': users,
+        'grouped_permissions': grouped_permissions,
+        'selected_group': selected_group,
+        'assigned_perm_ids': assigned_perm_ids,
+    }
+    return render(request, 'core/roles_overview.html', context)
+
+
+@login_required
+def approvals_list_view(request):
+    """Listă cu utilizatori în așteptare de aprobare (doar superadmin)."""
+    if not request.user.is_superuser:
+        raise PermissionDenied
+
+    pending_profiles = StudentProfile.objects.filter(approved=False).select_related('user', 'class_room').order_by('created_at')
+
+    context = {
+        'pending_profiles': pending_profiles,
+    }
+    return render(request, 'core/approvals.html', context)
+
+
+@login_required
+def approve_profile_view(request, profile_id):
+    """Aprobă un profil și preia orarul clasei pentru utilizatorul respectiv (doar superadmin)."""
+    if not request.user.is_superuser:
+        raise PermissionDenied
+
+    try:
+        profile = StudentProfile.objects.select_related('user', 'class_room').get(id=profile_id)
+    except StudentProfile.DoesNotExist:
+        messages.error(request, 'Profilul selectat nu există.')
+        return redirect('core:approvals')
+
+    if request.method != 'POST':
+        return redirect('core:approvals')
+
+    profile.approved = True
+    profile.approved_at = timezone.now()
+    profile.approved_by = request.user
+
+    # Asigură setarea "clasa" text și preia orarul clasei, dacă este definită
+    if profile.class_room and not profile.clasa:
+        profile.clasa = profile.class_room.nume
+    profile.save()
+
+    created_count = 0
+    try:
+        if profile.class_room:
+            created_count = apply_class_schedule_to_user(profile.class_room, profile.user)
+    except Exception:
+        created_count = 0
+
+    messages.success(request, f'Profilul pentru {profile.user.username} a fost aprobat. Orar preluat: {created_count} intrări.')
+    return redirect('core:approvals')
+
+
+@login_required
+def assign_roles_view(request):
+    """Punct de post pentru asignarea/actualizarea rolurilor (doar superadmin)."""
+    if not request.method == 'POST':
+        return redirect('core:roles_overview')
+    if not request.user.is_superuser:
+        raise PermissionDenied
+
+    try:
+        action = request.POST.get('action')
+        if action == 'add_user_to_group':
+            user_id = int(request.POST.get('user_id'))
+            group_id = int(request.POST.get('group_id'))
+            user = User.objects.get(id=user_id)
+            group = Group.objects.get(id=group_id)
+            group.user_set.add(user)
+            messages.success(request, f'Utilizatorul {user.username} a fost adăugat în grupul {group.name}.')
+        elif action == 'remove_user_from_group':
+            user_id = int(request.POST.get('user_id'))
+            group_id = int(request.POST.get('group_id'))
+            user = User.objects.get(id=user_id)
+            group = Group.objects.get(id=group_id)
+            group.user_set.remove(user)
+            messages.success(request, f'Utilizatorul {user.username} a fost eliminat din grupul {group.name}.')
+        elif action == 'add_permission_to_group':
+            group_id = int(request.POST.get('group_id'))
+            perm_id = int(request.POST.get('permission_id'))
+            group = Group.objects.get(id=group_id)
+            perm = Permission.objects.get(id=perm_id)
+            group.permissions.add(perm)
+            messages.success(request, f'Permisiunea {perm.codename} a fost adăugată grupului {group.name}.')
+        elif action == 'remove_permission_from_group':
+            group_id = int(request.POST.get('group_id'))
+            perm_id = int(request.POST.get('permission_id'))
+            group = Group.objects.get(id=group_id)
+            perm = Permission.objects.get(id=perm_id)
+            group.permissions.remove(perm)
+            messages.success(request, f'Permisiunea {perm.codename} a fost eliminată din grupul {group.name}.')
+        elif action == 'update_group_permissions':
+            group_id = int(request.POST.get('group_id'))
+            group = Group.objects.get(id=group_id)
+            perm_ids = request.POST.getlist('perm_ids')
+            # Înlocuiește setul de permisiuni cu cele selectate
+            new_perms = Permission.objects.filter(id__in=[int(pid) for pid in perm_ids])
+            group.permissions.set(new_perms)
+            messages.success(request, f'Permisiunile pentru {group.name} au fost actualizate.')
+    except Exception:
+        messages.error(request, 'Operația a eșuat. Verifică datele trimise.')
+
+    # Redirecționează înapoi păstrând grupul selectat
+    redirect_group = request.POST.get('group_id')
+    return redirect(f"{reverse('core:roles_overview')}?group={redirect_group}")

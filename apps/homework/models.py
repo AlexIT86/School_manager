@@ -198,6 +198,18 @@ class HomeworkFile(models.Model):
 
         super().save(*args, **kwargs)
 
+    @property
+    def marime_formatata(self):
+        """Returnează mărimea fișierului în format human-readable"""
+        if not self.marime:
+            return "Necunoscut"
+        size = float(self.marime)
+        for unit in ['B', 'KB', 'MB', 'GB']:
+            if size < 1024.0:
+                return f"{size:.1f} {unit}"
+            size /= 1024.0
+        return f"{size:.1f} TB"
+
 
 class HomeworkSession(models.Model):
     """

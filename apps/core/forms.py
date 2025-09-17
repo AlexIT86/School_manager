@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 from .models import StudentProfile
+from apps.schedule.models import ClassRoom
 
 
 class UserRegistrationForm(UserCreationForm):
@@ -9,6 +10,20 @@ class UserRegistrationForm(UserCreationForm):
     email = forms.EmailField(required=True)
     first_name = forms.CharField(max_length=30, required=True, label="Prenume")
     last_name = forms.CharField(max_length=30, required=True, label="Nume")
+
+    # Selectarea școlii și clasei
+    scoala = forms.ChoiceField(
+        required=True,
+        label="Școala",
+        choices=[],
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    class_room = forms.ModelChoiceField(
+        queryset=ClassRoom.objects.none(),
+        required=True,
+        label="Clasa (orar comun)",
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
 
     class Meta:
         model = User
@@ -22,6 +37,15 @@ class UserRegistrationForm(UserCreationForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        # Populează lista școlilor din ClassRoom
+        try:
+            schools = ClassRoom.objects.exclude(scoala="").values_list('scoala', flat=True).distinct().order_by('scoala')
+            self.fields['scoala'].choices = [(s, s) for s in schools] or [("", "-- Selectează școala --")]
+            self.fields['class_room'].queryset = ClassRoom.objects.all().order_by('scoala', 'nume')
+        except Exception:
+            self.fields['scoala'].choices = [("", "-- Selectează școala --")]
+            self.fields['class_room'].queryset = ClassRoom.objects.none()
 
         # Adaugă clase CSS Bootstrap
         for field_name, field in self.fields.items():
@@ -51,12 +75,13 @@ class StudentProfileForm(forms.ModelForm):
     class Meta:
         model = StudentProfile
         fields = [
-            'clasa', 'scoala', 'telefon_parinte', 'email_parinte',
+            'clasa', 'class_room', 'scoala', 'telefon_parinte', 'email_parinte',
             'ore_start', 'durata_ora', 'durata_pauza', 'nr_ore_pe_zi',
             'reminder_teme', 'reminder_note', 'zile_reminder_teme'
         ]
         labels = {
             'clasa': 'Clasa',
+            'class_room': 'Clasă (orar comun)',
             'scoala': 'Școala',
             'telefon_parinte': 'Telefon părinte',
             'email_parinte': 'Email părinte',
@@ -72,6 +97,9 @@ class StudentProfileForm(forms.ModelForm):
             'clasa': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'ex: 6A, 7B'
+            }),
+            'class_room': forms.Select(attrs={
+                'class': 'form-control'
             }),
             'scoala': forms.TextInput(attrs={
                 'class': 'form-control',

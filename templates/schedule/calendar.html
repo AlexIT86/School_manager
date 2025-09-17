@@ -486,9 +486,10 @@ function updateCurrentTime() {
     if (timeElement) {
         timeElement.textContent = timeString;
     }
-    
-    // Update current time indicator
-    updateCurrentTimeIndicator();
+    // Update current time indicator (single source of truth)
+    if (typeof ScheduleCalendar !== 'undefined' && ScheduleCalendar.updateIndicator) {
+        ScheduleCalendar.updateIndicator();
+    }
 }
 
 // Subject filter functionality
@@ -634,34 +635,9 @@ function navigateWeek(direction) {
 
 // Current time indicator
 function updateCurrentTimeIndicator() {
-    // Remove existing indicator
-    const existing = document.querySelector('.current-time-indicator');
-    if (existing) existing.remove();
-    
-    const now = new Date();
-    const currentDay = now.getDay(); // 0 = Sunday
-    const currentHour = now.getHours();
-    const currentMinute = now.getMinutes();
-    
-    // Only show during school days and hours
-    if (currentDay < 1 || currentDay > 5 || currentHour < 8 || currentHour > 16) {
-        return;
-    }
-    
-    // Find the current hour cell
-    const hourNumber = currentHour - 7; // Convert to hour number (1-8)
-    const cell = document.querySelector(`[data-day="${currentDay}"][data-hour-number="${hourNumber}"]`);
-    
-    if (cell) {
-        const indicator = document.createElement('div');
-        indicator.className = 'current-time-indicator';
-        
-        // Calculate position within the hour (0-50 minutes)
-        const minuteProgress = Math.min(currentMinute, 50) / 50;
-        indicator.style.top = (minuteProgress * 100) + '%';
-        
-        cell.style.position = 'relative';
-        cell.appendChild(indicator);
+    // Backwards compatibility: delegate to ScheduleCalendar
+    if (typeof ScheduleCalendar !== 'undefined' && ScheduleCalendar.updateIndicator) {
+        ScheduleCalendar.updateIndicator();
     }
 }
 
@@ -724,5 +700,12 @@ document.addEventListener('keydown', function(e) {
 // Month events from server
 window.SCHEDULE_MONTH_EVENTS = JSON.parse('{{ month_events_json|default:"[]"|escapejs }}');
 window.WEEKDAY_SUBJECT_COUNTS = JSON.parse('{{ weekday_subject_counts_json|default:"{}"|escapejs }}');
+window.SCHEDULE_PARAMS = {
+    startHour: {{ start_hour|default:8 }},
+    startMinute: {{ start_minute|default:0 }},
+    durationMin: {{ duration_min|default:50 }},
+    breakMin: {{ break_min|default:10 }},
+    maxHours: {{ max_hours|default:8 }}
+};
 </script>
 {% endblock %}

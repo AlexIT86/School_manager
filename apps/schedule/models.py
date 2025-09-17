@@ -83,6 +83,107 @@ class ScheduleEntry(models.Model):
         return int((end - start).total_seconds() / 60)
 
 
+class ClassRoom(models.Model):
+    """
+    Reprezintă o clasă (ex: 6A, 7B) pentru care se poate defini un orar comun.
+    """
+    nume = models.CharField(max_length=20, unique=True, help_text="Ex: 6A, 7B")
+    scoala = models.CharField(max_length=200, blank=True)
+    diriginte = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='classes_led')
+    descriere = models.TextField(blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Clasă"
+        verbose_name_plural = "Clase"
+        ordering = ['nume']
+
+    def __str__(self):
+        return self.nume
+
+
+class ClassScheduleEntry(models.Model):
+    """
+    O intrare de orar definită la nivel de clasă (independentă de utilizatori).
+    Nu depinde de modelul Subject (care este per utilizator). Reține numele materiei
+    și culoarea, care vor fi mapate/creată materia la preluare de către elev.
+    """
+    class_room = models.ForeignKey(ClassRoom, on_delete=models.CASCADE, related_name='schedule_entries')
+
+    zi_saptamana = models.IntegerField(choices=ScheduleEntry.WEEKDAYS, help_text="1=Luni, 2=Marți, etc.")
+    numar_ora = models.PositiveIntegerField(help_text="A câta oră din zi (1, 2, 3, etc.)")
+    ora_inceput = models.TimeField()
+    ora_sfarsit = models.TimeField()
+
+    subject_name = models.CharField(max_length=100, help_text="Numele materiei (ex: Matematică)")
+    subject_color = models.CharField(max_length=7, default='#007bff', help_text="Culoare în format hex (#FF5733)")
+
+    sala = models.CharField(max_length=20, blank=True)
+    note = models.TextField(blank=True)
+    tip_ora = models.CharField(
+        max_length=20,
+        choices=[
+            ('normal', 'Oră normală'),
+            ('dirigentie', 'Ora de dirigentie'),
+            ('optionala', 'Oră opțională'),
+            ('recuperare', 'Oră de recuperare'),
+        ],
+        default='normal'
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Intrare Orar Clasă"
+        verbose_name_plural = "Intrări Orar Clasă"
+        ordering = ['class_room', 'zi_saptamana', 'numar_ora']
+        unique_together = ['class_room', 'zi_saptamana', 'numar_ora']
+
+    def __str__(self):
+        return f"{self.class_room.nume} - {self.get_zi_saptamana_display()} Ora {self.numar_ora}: {self.subject_name}"
+
+
+def apply_class_schedule_to_user(class_room: 'ClassRoom', user: User) -> int:
+    """
+    Copiază orarul definit la nivelul clasei în orarul utilizatorului dat.
+    Returnează numărul de intrări create. Dacă utilizatorul are deja orar, nu suprascrie.
+    """
+    # Nu suprascriem dacă are deja orar definit
+    if ScheduleEntry.objects.filter(user=user).exists():
+        return 0
+
+    created = 0
+    # Pentru calculul orelor, folosim orele din intrările de clasă
+    for e in ClassScheduleEntry.objects.filter(class_room=class_room).order_by('zi_saptamana', 'numar_ora'):
+        try:
+            # Găsește sau creează materia pentru utilizator
+            subject, _ = Subject.objects.get_or_create(
+                user=user,
+                nume=e.subject_name,
+                defaults={'culoare': e.subject_color, 'activa': True}
+            )
+
+            ScheduleEntry.objects.create(
+                user=user,
+                subject=subject,
+                zi_saptamana=e.zi_saptamana,
+                ora_inceput=e.ora_inceput,
+                ora_sfarsit=e.ora_sfarsit,
+                sala=e.sala,
+                note=e.note,
+                numar_ora=e.numar_ora,
+                tip_ora=e.tip_ora,
+            )
+            created += 1
+        except Exception:
+            # Ignoră intrările problematice pentru a continua procesul
+            continue
+
+    return created
+
 class ScheduleTemplate(models.Model):
     """
     Template-uri pentru orar (ex: pentru semestre diferite)

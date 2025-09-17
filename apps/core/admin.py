@@ -9,6 +9,7 @@ class StudentProfileInline(admin.StackedInline):
     model = StudentProfile
     can_delete = False
     verbose_name_plural = 'Profile Studenți'
+    fk_name = 'user'
 
 
 class CustomUserAdmin(UserAdmin):

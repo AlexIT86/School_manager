@@ -2,7 +2,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
 from datetime import time, timedelta
-from .models import ScheduleEntry, ScheduleTemplate, ScheduleChange
+from .models import ScheduleEntry, ScheduleTemplate, ScheduleChange, ClassRoom, ClassScheduleEntry
 from apps.subjects.models import Subject
 
 
@@ -603,3 +603,64 @@ class BulkScheduleActionForm(forms.Form):
             raise forms.ValidationError('Trebuie să specifici numele template-ului.')
 
         return cleaned_data
+
+
+class ClassRoomForm(forms.ModelForm):
+    """Form pentru clase (6A, 7B)"""
+
+    class Meta:
+        model = ClassRoom
+        fields = ['nume', 'scoala', 'diriginte', 'descriere']
+        labels = {
+            'nume': 'Clasa',
+            'scoala': 'Școala',
+            'diriginte': 'Diriginte (utilizator)',
+            'descriere': 'Descriere',
+        }
+        widgets = {
+            'nume': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'ex: 6A', 'required': True}),
+            'scoala': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'ex: Liceul ...'}),
+            'diriginte': forms.Select(attrs={'class': 'form-control'}),
+            'descriere': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }
+
+
+class ClassScheduleEntryForm(forms.ModelForm):
+    """Form pentru intrările de orar la nivel de clasă"""
+
+    class Meta:
+        model = ClassScheduleEntry
+        fields = [
+            'zi_saptamana', 'numar_ora', 'ora_inceput', 'ora_sfarsit',
+            'subject_name', 'subject_color', 'sala', 'tip_ora', 'note'
+        ]
+        labels = {
+            'zi_saptamana': 'Ziua',
+            'numar_ora': 'Ora (index)',
+            'ora_inceput': 'Început',
+            'ora_sfarsit': 'Sfârșit',
+            'subject_name': 'Materia',
+            'subject_color': 'Culoare',
+            'sala': 'Sala',
+            'tip_ora': 'Tipul orei',
+            'note': 'Note',
+        }
+        widgets = {
+            'zi_saptamana': forms.Select(attrs={'class': 'form-control', 'required': True}),
+            'numar_ora': forms.NumberInput(attrs={'class': 'form-control', 'min': '1', 'max': '8', 'required': True}),
+            'ora_inceput': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time', 'required': True}),
+            'ora_sfarsit': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time', 'required': True}),
+            'subject_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'ex: Matematică', 'required': True}),
+            'subject_color': forms.TextInput(attrs={'class': 'form-control', 'type': 'color', 'style': 'height: 45px;'}),
+            'sala': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'ex: A12'}),
+            'tip_ora': forms.Select(attrs={'class': 'form-control'}),
+            'note': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+        }
+
+    def clean(self):
+        cleaned = super().clean()
+        start = cleaned.get('ora_inceput')
+        end = cleaned.get('ora_sfarsit')
+        if start and end and end <= start:
+            raise ValidationError('Ora de sfârșit trebuie să fie după ora de început.')
+        return cleaned

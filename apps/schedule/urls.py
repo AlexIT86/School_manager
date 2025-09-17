@@ -29,4 +29,15 @@ urlpatterns = [
 
     # AJAX endpoints
     path('quick-edit/', views.schedule_quick_edit_view, name='quick_edit'),
+
+    # Clase și orar pe clasă (admin intern)
+    path('classes/', views.classroom_list_view, name='classes'),
+    path('classes/create/', views.classroom_create_view, name='class_create'),
+    path('classes/<int:class_id>/edit/', views.classroom_edit_view, name='class_edit'),
+    path('classes/<int:class_id>/delete/', views.classroom_delete_view, name='class_delete'),
+    path('classes/<int:class_id>/schedule/', views.class_schedule_view, name='class_schedule'),
+    path('classes/<int:class_id>/schedule/create/', views.class_schedule_entry_create_view, name='class_schedule_entry_create'),
+    path('classes/<int:class_id>/schedule/<int:entry_id>/edit/', views.class_schedule_entry_edit_view, name='class_schedule_entry_edit'),
+    path('classes/<int:class_id>/schedule/<int:entry_id>/delete/', views.class_schedule_entry_delete_view, name='class_schedule_entry_delete'),
+    path('classes/<int:class_id>/schedule/import-from-user/', views.class_schedule_import_from_user, name='class_schedule_import_from_user'),
 ]

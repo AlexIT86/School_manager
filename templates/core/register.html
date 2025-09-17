@@ -313,6 +313,40 @@
                     </div>
                 </div>
                 
+                <!-- Școala și Clasa -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            <select id="id_scoala" name="scoala" class="form-control" required>
+                                {% for val,label in form.scoala.field.choices %}
+                                    <option value="{{ val }}" {% if form.scoala.value == val %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                            <label for="id_scoala"><i class="fas fa-school me-2"></i>Școala</label>
+                            {% if form.scoala.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.scoala.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            <select id="id_class_room" name="class_room" class="form-control" required>
+                                {% for cr in form.class_room.field.queryset %}
+                                    <option value="{{ cr.id }}" {% if form.class_room.value == cr.id %}selected{% endif %}>{{ cr.scoala }} - {{ cr.nume }}</option>
+                                {% endfor %}
+                            </select>
+                            <label for="id_class_room"><i class="fas fa-users me-2"></i>Clasa</label>
+                            {% if form.class_room.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.class_room.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Terms and Conditions -->
                 <div class="form-check mb-4">
                     <input class="form-check-input" type="checkbox" id="acceptTerms" required>
