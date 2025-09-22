@@ -4,3 +4,6 @@ python-decouple==3.8
 whitenoise==6.6.0
 gunicorn==21.2.0
 sendgrid==6.11.0
+openpyxl==3.1.5
+reportlab==4.2.2
+icalendar==5.0.12

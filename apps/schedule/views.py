@@ -18,6 +18,8 @@ from django.core.exceptions import PermissionDenied
 from apps.subjects.models import Subject
 from apps.core.models import Notification
 from apps.grades.models import Grade
+from django.http import HttpResponse
+from django.conf import settings
 
 
 def _propagate_class_entry_to_users(entry: ClassScheduleEntry):
@@ -790,6 +792,268 @@ def schedule_quick_edit_view(request):
             })
 
     return JsonResponse({'success': False, 'error': 'Acțiune invalidă'})
+
+
+@login_required
+def schedule_export_view(request):
+    """Exportă orarul în CSV/XLSX/PDF/ICS (implementare minimă, dar utilă)."""
+    fmt = (request.GET.get('format') or '').lower()
+    if fmt not in ['csv', 'xlsx', 'pdf', 'ical', 'ics', 'excel']:
+        fmt = 'csv'
+
+    entries = ScheduleEntry.objects.filter(user=request.user).select_related('subject').order_by('zi_saptamana', 'numar_ora')
+
+    weekdays = {1: 'Luni', 2: 'Marți', 3: 'Miercuri', 4: 'Joi', 5: 'Vineri'}
+
+    if fmt in ['csv']:
+        lines = ["Zi,Ora,Inceput,Sfarsit,Materie,Sala,Tip"]
+        for e in entries:
+            lines.append(
+                f"{weekdays.get(e.zi_saptamana, e.zi_saptamana)},{e.numar_ora},{e.ora_inceput.strftime('%H:%M')},{e.ora_sfarsit.strftime('%H:%M')},{e.subject.nume},{e.sala or ''},{e.get_tip_ora_display()}"
+            )
+        content = "\n".join(lines)
+        response = HttpResponse(content, content_type='text/csv; charset=utf-8')
+        response['Content-Disposition'] = 'attachment; filename="orar.csv"'
+        return response
+
+    if fmt in ['xlsx', 'excel']:
+        # XLSX cu openpyxl
+        try:
+            from openpyxl import Workbook
+        except Exception:
+            return HttpResponse('openpyxl nu este instalat', status=500)
+        wb = Workbook()
+        ws = wb.active
+        ws.title = 'Orar'
+        ws.append(['Zi', 'Ora', 'Început', 'Sfârșit', 'Materie', 'Sala', 'Tip'])
+        for e in entries:
+            ws.append([
+                weekdays.get(e.zi_saptamana, e.zi_saptamana),
+                e.numar_ora,
+                e.ora_inceput.strftime('%H:%M'),
+                e.ora_sfarsit.strftime('%H:%M'),
+                e.subject.nume,
+                e.sala or '',
+                e.get_tip_ora_display(),
+            ])
+        from io import BytesIO
+        buf = BytesIO()
+        wb.save(buf)
+        buf.seek(0)
+        response = HttpResponse(buf.read(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = 'attachment; filename="orar.xlsx"'
+        return response
+
+    if fmt == 'pdf':
+        # PDF în format A3 landscape, grilă similară cu pagina Orar și cu diacritice
+        try:
+            from reportlab.lib.pagesizes import A3, landscape
+            from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+            from reportlab.lib import colors
+            from reportlab.lib.styles import getSampleStyleSheet
+            from reportlab.pdfbase import pdfmetrics
+            from reportlab.pdfbase.ttfonts import TTFont
+        except Exception:
+            return HttpResponse('reportlab nu este instalat', status=500)
+
+        from io import BytesIO
+        buf = BytesIO()
+
+        doc = SimpleDocTemplate(
+            buf,
+            pagesize=landscape(A3),
+            leftMargin=24,
+            rightMargin=24,
+            topMargin=24,
+            bottomMargin=24,
+        )
+
+        # Înregistrare font cu diacritice (căutăm DejaVuSans/Arial)
+        font_registered = 'Helvetica'
+        candidate_paths = []
+        try:
+            base_dir = getattr(settings, 'BASE_DIR', None)
+            if base_dir:
+                candidate_paths.append(str(base_dir / 'static' / 'fonts' / 'DejaVuSans.ttf'))
+        except Exception:
+            pass
+        # Căi comune pe Windows/Linux
+        candidate_paths.extend([
+            'C:/Windows/Fonts/DejaVuSans.ttf',
+            'C:/Windows/Fonts/arial.ttf',
+            '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+            '/usr/share/fonts/truetype/msttcorefonts/Arial.ttf',
+        ])
+        for p in candidate_paths:
+            try:
+                import os
+                if os.path.exists(p):
+                    pdfmetrics.registerFont(TTFont('DejaVuSans', p))
+                    font_registered = 'DejaVuSans'
+                    break
+            except Exception:
+                continue
+
+        styles = getSampleStyleSheet()
+        styles['Title'].fontName = font_registered
+        styles['Normal'].fontName = font_registered
+        title = Paragraph('Orar școlar', styles['Title'])
+        # Informații săptămână
+        from datetime import date, timedelta
+        today = date.today()
+        week_start = today - timedelta(days=today.weekday())
+        week_end = week_start + timedelta(days=4)
+        subtitle = Paragraph(f"Săptămâna {week_start.strftime('%d.%m.%Y')} - {week_end.strftime('%d.%m.%Y')}", styles['Normal'])
+
+        # Parametri orar (identic cu UI)
+        max_hours = 8
+        start_base = time(8, 0)
+        class_duration = 50
+        break_duration = 10
+        try:
+            if hasattr(request.user, 'student_profile') and request.user.student_profile:
+                prof = request.user.student_profile
+                if getattr(prof, 'nr_ore_pe_zi', None):
+                    max_hours = int(prof.nr_ore_pe_zi)
+                if getattr(prof, 'ore_start', None):
+                    start_base = prof.ore_start
+                if getattr(prof, 'durata_ora', None):
+                    class_duration = int(prof.durata_ora or 50)
+                if getattr(prof, 'durata_pauza', None):
+                    break_duration = int(prof.durata_pauza or 10)
+        except Exception:
+            pass
+
+        # Etichete timp pe rânduri
+        from datetime import datetime as dt
+        slot_total = class_duration + break_duration
+        time_labels = []
+        day_start_dt = dt.combine(today, start_base)
+        for idx in range(max_hours):
+            slot_start_dt = day_start_dt + timedelta(minutes=idx * slot_total)
+            slot_end_dt = slot_start_dt + timedelta(minutes=class_duration)
+            time_labels.append((slot_start_dt.time(), slot_end_dt.time()))
+
+        # Harta intrări (zi, oră)
+        entry_map = {}
+        for e in entries:
+            entry_map[(e.zi_saptamana, e.numar_ora)] = e
+
+        # Grilă: header + rânduri ore
+        header = ['Oră'] + [weekdays[d] for d in range(1, 6)]
+        data = [header]
+        for hour_idx in range(1, max_hours + 1):
+            label = time_labels[hour_idx - 1]
+            row = [f"{hour_idx} ( {label[0].strftime('%H:%M')} - {label[1].strftime('%H:%M')} )"]
+            for day_num in range(1, 6):
+                e = entry_map.get((day_num, hour_idx))
+                if e:
+                    subj = e.subject
+                    cell = f"{subj.nume}\n{e.ora_inceput.strftime('%H:%M')} - {e.ora_sfarsit.strftime('%H:%M')}" + (f"\nSala {e.sala}" if e.sala else '')
+                else:
+                    cell = ''
+                row.append(cell)
+            data.append(row)
+
+        # Conversie hex -> reportlab color
+        def _hex_to_color(hex_str, fallback=colors.lightgrey, alpha=1.0):
+            try:
+                h = (hex_str or '').strip()
+                if h.startswith('#') and len(h) == 7:
+                    r = int(h[1:3], 16) / 255.0
+                    g = int(h[3:5], 16) / 255.0
+                    b = int(h[5:7], 16) / 255.0
+                    c = colors.Color(r, g, b, alpha=alpha)
+                    return c
+            except Exception:
+                pass
+            return fallback
+
+        # Lățimi coloane (A3 landscape)
+        # Prima coloană mai îngustă (ore + interval), 5 coloane egale pentru zile
+        page_w, page_h = landscape(A3)
+        usable_w = page_w - (doc.leftMargin + doc.rightMargin)
+        first_col = 120
+        day_col = (usable_w - first_col) / 5.0
+        col_widths = [first_col] + [day_col] * 5
+
+        table = Table(data, colWidths=col_widths, repeatRows=1, hAlign='LEFT')
+
+        # Stiluri tabel
+        style_cmds = [
+            ('FONTNAME', (0, 0), (-1, -1), font_registered),
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2c3e50')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 9),
+            ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+            ('ALIGN', (0, 1), (0, -1), 'CENTER'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('GRID', (0, 0), (-1, -1), 0.25, colors.grey),
+            ('LINEBEFORE', (1, 0), (-1, -1), 0.25, colors.grey),
+            ('ROWHEIGHT', (0, 1), (-1, -1), 28),
+        ]
+
+        # Alternare culori pe rânduri (după ore)
+        for ridx in range(1, len(data)):
+            bg = colors.whitesmoke if ridx % 2 == 1 else colors.white
+            style_cmds.append(('BACKGROUND', (0, ridx), (-1, ridx), bg))
+
+        # Colorează celulele care au ore cu culoarea materiei (translucid)
+        for hour_idx in range(1, max_hours + 1):
+            row_idx = hour_idx  # în data, header e pe rândul 0
+            for day_num in range(1, 6):
+                e = entry_map.get((day_num, hour_idx))
+                if e:
+                    subj_color = getattr(e.subject, 'culoare', '#EAEAEA')
+                    style_cmds.append(('BACKGROUND', (day_num, row_idx), (day_num, row_idx), _hex_to_color(subj_color, colors.HexColor('#e8f4ff'))))
+
+        table.setStyle(TableStyle(style_cmds))
+
+        story = [title, Spacer(1, 6), subtitle, Spacer(1, 12), table]
+        doc.build(story)
+        buf.seek(0)
+        response = HttpResponse(buf.read(), content_type='application/pdf')
+        response['Content-Disposition'] = 'attachment; filename="orar.pdf"'
+        return response
+
+    if fmt in ['ical', 'ics']:
+        # ICS cu icalendar
+        try:
+            from icalendar import Calendar, Event
+        except Exception:
+            return HttpResponse('icalendar nu este instalat', status=500)
+        from datetime import datetime, date, timedelta
+        from pytz import timezone
+        tz = timezone('Europe/Bucharest')
+        cal = Calendar()
+        cal.add('prodid', '-//School Manager Orar//ro')
+        cal.add('version', '2.0')
+
+        # Creează evenimente pentru săptămâna curentă (Luni-Vineri)
+        today = date.today()
+        week_start = today - timedelta(days=today.weekday())
+        for e in entries:
+            # Map zi săptămână la data din săptămâna curentă
+            event_date = week_start + timedelta(days=(e.zi_saptamana - 1))
+            start_dt = tz.localize(datetime.combine(event_date, e.ora_inceput))
+            end_dt = tz.localize(datetime.combine(event_date, e.ora_sfarsit))
+            ev = Event()
+            ev.add('summary', f"{e.subject.nume}")
+            ev.add('dtstart', start_dt)
+            ev.add('dtend', end_dt)
+            if e.sala:
+                ev.add('location', e.sala)
+            ev.add('description', f"Tip: {e.get_tip_ora_display()}\nNote: {e.note or ''}")
+            cal.add_component(ev)
+
+        ics_bytes = cal.to_ical()
+        response = HttpResponse(ics_bytes, content_type='text/calendar; charset=utf-8')
+        response['Content-Disposition'] = 'attachment; filename="orar.ics"'
+        return response
+
+    # fallback
+    return HttpResponse('Format neacceptat', status=400)
 
 
 def render_schedule_entry_html(entry):

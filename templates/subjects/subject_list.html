@@ -446,7 +446,9 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     function filterAndSort() {
-        const searchTerm = searchInput.value.toLowerCase();
+        // Live search only after first 3 characters
+        const rawSearch = searchInput.value.toLowerCase();
+        const searchTerm = rawSearch.length >= 3 ? rawSearch : '';
         const sortValue = sortSelect.value;
         const statusFilter = document.querySelector('input[name="statusFilter"]:checked').value;
         
@@ -502,11 +504,13 @@ document.addEventListener('DOMContentLoaded', function() {
             item.style.order = index;
         });
         
-        // Show empty state if no items
-        const emptyState = document.querySelector('.empty-state');
+        // Show/remove dynamic empty placeholder
+        const dynamicEmptyId = 'subjects-empty-placeholder';
+        const existingPlaceholder = document.getElementById(dynamicEmptyId);
         if (items.length === 0 && subjectItems.length > 0) {
-            if (!emptyState) {
+            if (!existingPlaceholder) {
                 const emptyDiv = document.createElement('div');
+                emptyDiv.id = dynamicEmptyId;
                 emptyDiv.className = 'col-12 text-center py-5';
                 emptyDiv.innerHTML = `
                     <i class="fas fa-search fa-3x text-muted mb-3"></i>
@@ -515,8 +519,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 `;
                 subjectsGrid.appendChild(emptyDiv);
             }
-        } else if (emptyState && items.length > 0) {
-            emptyState.remove();
+        } else if (existingPlaceholder) {
+            existingPlaceholder.remove();
         }
     }
     
@@ -619,6 +623,9 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(() => SchoolManager.showAlert('Eroare de rețea.', 'danger'));
     }
+    
+    // Initial render to ensure placeholder state is correct
+    filterAndSort();
 });
 </script>
 {% endblock %}

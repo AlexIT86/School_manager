@@ -26,6 +26,8 @@ urlpatterns = [
     # Vizualizări speciale
     path('print/', views.schedule_print_view, name='print'),
     path('today/', views.schedule_today_view, name='today'),
+    # Export
+    path('export/', views.schedule_export_view, name='export'),
     path('year/2025-2026/', views.school_year_2025_2026_view, name='school_year_2025_2026'),
 
     # AJAX endpoints
