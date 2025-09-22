@@ -435,11 +435,12 @@ def homework_file_delete_view(request, homework_id, file_id):
 
     if request.method == 'POST':
         file_name = file_obj.nume
-        # Șterge fișierul fizic
+        # Șterge fișierul din storage backend
         if file_obj.fisier:
-            file_path = file_obj.fisier.path
-            if os.path.exists(file_path):
-                os.remove(file_path)
+            try:
+                file_obj.fisier.delete(save=False)
+            except Exception:
+                pass
 
         file_obj.delete()
         messages.success(request, f'Fișierul "{file_name}" a fost șters!')

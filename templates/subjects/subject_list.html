@@ -203,15 +203,11 @@
                     </div>
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <span class="small">Active:</span>
-                        <span class="badge bg-success">
-                            {% for item in subjects_with_stats %}{% if item.subject.activa %}{{ forloop.counter0|add:1 }}{% endif %}{% empty %}0{% endfor %}
-                        </span>
+                        <span class="badge bg-success">{{ quick_stats.active_count }}</span>
                     </div>
                     <div class="d-flex justify-content-between align-items-center">
                         <span class="small">Cu teme active:</span>
-                        <span class="badge bg-warning">
-                            {% for item in subjects_with_stats %}{% if item.stats.total_homework > 0 %}{{ forloop.counter0|add:1 }}{% endif %}{% empty %}0{% endfor %}
-                        </span>
+                        <span class="badge bg-warning">{{ quick_stats.with_homework_count }}</span>
                     </div>
                 </div>
             </div>

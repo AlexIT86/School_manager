@@ -82,6 +82,11 @@ class ScheduleEntry(models.Model):
         end = datetime.combine(datetime.today(), self.ora_sfarsit)
         return int((end - start).total_seconds() / 60)
 
+    # Alias corect păstrând compatibilitatea cu eventuale referințe existente
+    @property
+    def durata_minute(self):
+        return self.durata_minunte
+
 
 class ClassRoom(models.Model):
     """

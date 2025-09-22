@@ -247,13 +247,16 @@ def grade_create_view(request):
                 )
                 stats.calculeaza_statistici()
 
-                # Verifică obiectivele
-                goals = GradeGoal.objects.filter(
+                # Verifică obiectivele (mapează corect la obiectul Semester)
+                goals_qs = GradeGoal.objects.filter(
                     user=request.user,
                     subject=grade.subject,
-                    semester_id=grade.semestru
                 )
-                for goal in goals:
+                if semester_obj:
+                    goals_qs = goals_qs.filter(semester=semester_obj)
+                else:
+                    goals_qs = goals_qs.filter(semester__numar=grade.semestru)
+                for goal in goals_qs:
                     goal.verifica_obiectiv()
 
                 # Creează notificare pentru note mari/mici

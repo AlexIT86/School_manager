@@ -137,12 +137,11 @@ class SubjectFile(models.Model):
         """Returnează mărimea fișierului în format human-readable"""
         if not self.marime:
             return "Necunoscut"
-
-        for unit in ['B', 'KB', 'MB', 'GB']:
-            if self.marime < 1024.0:
-                return f"{self.marime:.1f} {unit}"
-            self.marime /= 1024.0
-        return f"{self.marime:.1f} TB"
+        size = float(self.marime)
+        for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+            if size < 1024.0 or unit == 'TB':
+                return f"{size:.1f} {unit}"
+            size /= 1024.0
 
     @property
     def extensie(self):

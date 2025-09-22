@@ -14,11 +14,12 @@ DEBUG = config('DEBUG', default=True, cast=bool)
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
-    config('RENDER_EXTERNAL_HOSTNAME', default=''),
 ]
+_render_host = config('RENDER_EXTERNAL_HOSTNAME', default='').strip()
+if _render_host:
+    ALLOWED_HOSTS.append(_render_host)
 
 # CSRF trusted origin pentru Render
-_render_host = config('RENDER_EXTERNAL_HOSTNAME', default='')
 if _render_host:
     CSRF_TRUSTED_ORIGINS = [f"https://{_render_host}"]
 
@@ -158,6 +159,9 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
 
 # Custom user settings - folosim User-ul default de Django pentru simplitate
 # AUTH_USER_MODEL = 'core.CustomUser'  # Dacă vrem să customizăm mai târziu

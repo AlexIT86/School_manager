@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse, FileResponse
 from django.db.models import Count, Avg
 from django.core.paginator import Paginator
 from django.conf import settings
@@ -11,6 +11,7 @@ import re
 import os
 
 from .models import Subject, SubjectFile, SubjectNote
+from django.utils.text import get_valid_filename
 from .forms import SubjectForm, SubjectFileForm, SubjectNoteForm
 from apps.homework.models import Homework
 from apps.grades.models import Grade
@@ -40,8 +41,16 @@ def subject_list_view(request):
             'stats': stats
         })
 
+    # Quick stats
+    active_count = subjects.filter(activa=True).count()
+    with_homework_count = subjects.filter(homework_set__finalizata=False).distinct().count()
+
     context = {
         'subjects_with_stats': subjects_with_stats,
+        'quick_stats': {
+            'active_count': active_count,
+            'with_homework_count': with_homework_count,
+        }
     }
 
     return render(request, 'subjects/subject_list.html', context)
@@ -273,11 +282,12 @@ def subject_file_delete_view(request, subject_id, file_id):
 
     if request.method == 'POST':
         file_name = file_obj.nume
-        # Șterge fișierul fizic
+        # Șterge fișierul din storage backend
         if file_obj.fisier:
-            file_path = file_obj.fisier.path
-            if os.path.exists(file_path):
-                os.remove(file_path)
+            try:
+                file_obj.fisier.delete(save=False)
+            except Exception:
+                pass
 
         file_obj.delete()
         messages.success(request, f'Fișierul "{file_name}" a fost șters!')
@@ -497,12 +507,13 @@ def download_subject_file(request, subject_id, file_id):
     file_obj = get_object_or_404(SubjectFile, id=file_id, subject=subject)
 
     if file_obj.fisier:
-        file_path = file_obj.fisier.path
-        if os.path.exists(file_path):
-            with open(file_path, 'rb') as f:
-                response = HttpResponse(f.read(), content_type='application/octet-stream')
-                response['Content-Disposition'] = f'attachment; filename="{file_obj.nume}"'
-                return response
+        try:
+            # Deschide fișierul din storage (compatibil cu orice backend)
+            file_obj.fisier.open('rb')
+            safe_name = get_valid_filename(file_obj.nume or os.path.basename(file_obj.fisier.name))
+            return FileResponse(file_obj.fisier, as_attachment=True, filename=safe_name)
+        except Exception:
+            pass
 
     messages.error(request, 'Fișierul nu a fost găsit!')
     return redirect('subjects:detail', subject_id=subject.id)
