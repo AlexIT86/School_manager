@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.contrib.auth.models import User
 from django.db.models import Q
-from .models import Conversation, Message
+from .models import Conversation, Message, ChatAttachment
 from django.contrib.sessions.models import Session
 from django.utils import timezone
 from django.utils import timezone
@@ -39,7 +39,7 @@ def inbox_view(request):
 @login_required
 def conversation_view(request, convo_id):
     convo = get_object_or_404(Conversation, id=convo_id, participants=request.user)
-    messages = convo.messages.select_related('sender').all()
+    messages = convo.messages.select_related('sender').prefetch_related('attachments').all()
     # Marchează ca citite
     try:
         for m in messages:
@@ -83,12 +83,15 @@ def send_message_view(request, convo_id):
     convo = get_object_or_404(Conversation, id=convo_id, participants=request.user)
     if request.method == 'POST':
         content = (request.POST.get('content') or '').strip()
-        if not content:
+        if not content and not request.FILES:
             return JsonResponse({'success': False, 'error': 'Mesajul este gol'}, status=400)
         msg = Message.objects.create(conversation=convo, sender=request.user, content=content)
+        # Attachments
+        for f in request.FILES.getlist('files'):
+            att = ChatAttachment.objects.create(message=msg, file=f, content_type=getattr(f, 'content_type', ''))
         convo.updated_at = msg.created_at
         convo.save(update_fields=['updated_at'])
-        return JsonResponse({'success': True, 'message_id': msg.id, 'created_at': msg.created_at.isoformat(), 'sender': request.user.username})
+        return JsonResponse({'success': True, 'message_id': msg.id, 'created_at': timezone.localtime(msg.created_at).strftime('%d.%m.%Y %H:%M'), 'sender': request.user.username})
     return JsonResponse({'success': False, 'error': 'Metodă invalidă'}, status=405)
 
 
@@ -106,12 +109,19 @@ def fetch_messages_view(request, convo_id):
         }
         for m in qs
     ]
+    # Attachments info
+    files_map = {}
+    for m in qs:
+        arr = []
+        for a in m.attachments.all():
+            arr.append({'url': a.file.url, 'name': a.name, 'is_image': a.is_image})
+        files_map[m.id] = arr
     # Marchează cele noi ca citite
     try:
         for m in qs:
             m.read_by.add(request.user)
     except Exception:
         pass
-    return JsonResponse({'success': True, 'messages': data})
+    return JsonResponse({'success': True, 'messages': data, 'attachments': files_map})
 
 

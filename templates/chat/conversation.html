@@ -25,6 +25,21 @@
             <div class="d-inline-block px-3 py-2 rounded-3 {% if m.sender == request.user %}bg-primary text-white{% else %}bg-light{% endif %}">
               <div class="small fw-bold">{% if m.sender != request.user %}{{ m.sender.username }}{% else %}Tu{% endif %}</div>
               <div class="small">{{ m.content|linebreaksbr }}</div>
+              {% if m.attachments.all %}
+              <div class="mt-1">
+                {% for att in m.attachments.all %}
+                  {% if att.is_image %}
+                    <a href="#" class="chat-attachment" data-url="{{ att.file.url }}" data-name="{{ att.name }}" data-image="1">
+                      <img src="{{ att.file.url }}" alt="{{ att.name }}" style="max-width:180px;max-height:120px" class="me-2 mb-1">
+                    </a>
+                  {% else %}
+                    <a href="#" class="btn btn-sm btn-outline-secondary me-2 mb-1 chat-attachment" data-url="{{ att.file.url }}" data-name="{{ att.name }}" data-image="0">
+                      <i class="fas fa-paperclip me-1"></i> {{ att.name }}
+                    </a>
+                  {% endif %}
+                {% endfor %}
+              </div>
+              {% endif %}
               <div class="small text-muted">{{ m.created_at|date:"d.m.Y H:i" }}</div>
             </div>
           </div>
@@ -32,20 +47,62 @@
       </div>
     </div>
     <div class="card-footer">
-      <form id="sendForm" class="d-flex gap-2" data-no-global-loading onsubmit="event.stopPropagation(); return sendMessage()">
-        <input type="text" id="content" class="form-control" placeholder="Scrie un mesaj...">
+      <form id="sendForm" class="d-flex gap-2" data-no-global-loading onsubmit="event.stopPropagation(); return sendMessage()" enctype="multipart/form-data">
+        <div class="input-group">
+          <button class="btn btn-outline-secondary" type="button" id="emojiBtn" title="Emoji">😊</button>
+          <input type="text" id="content" class="form-control" placeholder="Scrie un mesaj...">
+        </div>
+        <label class="btn btn-outline-secondary mb-0" title="Atașează fișiere">
+          <i class="fas fa-paperclip"></i>
+          <input type="file" id="files" name="files" class="d-none" multiple>
+        </label>
         <button class="btn btn-primary" type="submit"><i class="fas fa-paper-plane"></i></button>
       </form>
+    </div>
+  </div>
+
+  <!-- Custom File Preview Overlay -->
+  <div id="filePreview" class="file-preview-overlay d-none">
+    <div class="file-preview-backdrop"></div>
+    <div class="file-preview-content">
+      <button type="button" class="btn-close file-preview-close"></button>
+      <div id="filePreviewBody"></div>
     </div>
   </div>
 </div>
 
 {% block extra_js %}
+{% block extra_css %}
+<style>
+.file-preview-overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:1060}
+.file-preview-overlay.d-none{display:none}
+.file-preview-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.6)}
+.file-preview-content{position:relative;max-width:90vw;max-height:85vh;background:#fff;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,.25);padding:16px;overflow:auto}
+.file-preview-content img{max-width:85vw;max-height:75vh}
+.file-preview-close{position:absolute;right:8px;top:8px}
+</style>
+{% endblock %}
 <script>
 window.CHAT = window.CHAT || {};
 window.CHAT.convoId = {{ conversation.id }};
 window.CHAT.lastId = {{ last_id|default:0 }};
 window.CHAT.fetching = false;
+
+function closeEmojiPickers(){
+  try { if (window._emojiPicker && window._emojiPicker.hidePicker) { window._emojiPicker.hidePicker(); } } catch(e) {}
+  try {
+    if (window._emojiFallbackMenu && window._emojiFallbackMenu.parentNode) {
+      window._emojiFallbackMenu.parentNode.removeChild(window._emojiFallbackMenu);
+      window._emojiFallbackMenu = null;
+    }
+  } catch(e) {}
+  try {
+    document.querySelectorAll('.emoji-picker, .emoji-picker__wrapper, .emoji-picker__container, .EmojiPicker').forEach(el=>{
+      el.parentNode && el.parentNode.removeChild(el);
+    });
+  } catch(e) {}
+  try { const btn = document.getElementById('emojiBtn'); if (btn) btn.dataset.pickerOpen = '0'; } catch(e) {}
+}
 
 function scrollBottom(){
   const pane = document.getElementById('messagesPane');
@@ -57,19 +114,28 @@ function sendMessage(){
   const input = document.getElementById('content');
   const text = input.value.trim();
   if(!text) return false;
+  // Închide orice picker deschis chiar la start
+  closeEmojiPickers();
   setLoading(true);
   const submitBtn = document.querySelector('#sendForm button[type="submit"]');
   // Protejează împotriva loading-ului global: setează manual textul și îl restaurăm noi
   if (submitBtn && !submitBtn.dataset.originalText) {
     submitBtn.dataset.originalText = submitBtn.innerHTML;
   }
+  const formData = new FormData();
+  formData.append('content', text);
+  const files = document.getElementById('files').files;
+  for (let i=0;i<files.length;i++){ formData.append('files', files[i]); }
   fetch(`/chat/${window.CHAT.convoId}/send/`, {
     method:'POST',
     headers:{'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value},
-    body: new URLSearchParams({content:text})
+    body: formData
   }).then(r=>r.json()).then(d=>{
     if(d.success){
       input.value = '';
+      document.getElementById('files').value = '';
+      // Închide emoji picker-ul dacă e deschis
+      closeEmojiPickers();
       fetchNew().finally(()=> {
         setLoading(false);
         if (submitBtn && submitBtn.dataset.originalText) {
@@ -109,8 +175,21 @@ function fetchNew(){
             const wrap = document.createElement('div');
             wrap.id = `msg-${m.id}`;
             wrap.className = `mb-2 ${me ? 'text-end' : ''}`;
+            let bodyHtml = `<div class=\"small\">${(m.content||'').replaceAll('\\n','<br>')}</div>`;
+            const atts = (d.attachments && d.attachments[m.id]) ? d.attachments[m.id] : [];
+            if (atts.length) {
+              bodyHtml += '<div class=\"mt-1\">';
+              atts.forEach(a => {
+                if (a.is_image) {
+                  bodyHtml += `<a href=\"#\" class=\"chat-attachment\" data-url=\"${a.url}\" data-name=\"${a.name}\" data-image=\"1\"><img src=\"${a.url}\" alt=\"${a.name}\" style=\"max-width:180px;max-height:120px\" class=\"me-2 mb-1\"></a>`;
+                } else {
+                  bodyHtml += `<a href=\"#\" class=\"btn btn-sm btn-outline-secondary me-2 mb-1 chat-attachment\" data-url=\"${a.url}\" data-name=\"${a.name}\" data-image=\"0\"><i class=\"fas fa-paperclip me-1\"></i>${a.name}</a>`;
+                }
+              });
+              bodyHtml += '</div>';
+            }
             wrap.innerHTML = `
-              <div class=\"d-inline-block px-3 py-2 rounded-3 ${me ? 'bg-primary text-white' : 'bg-light'}\">\n                <div class=\"small fw-bold\">${me ? 'Tu' : m.sender}</div>\n                <div class=\"small\">${m.content.replaceAll('\\n','<br>')}</div>\n                <div class=\"small text-muted\">${m.created_at}</div>\n              </div>`;
+              <div class=\"d-inline-block px-3 py-2 rounded-3 ${me ? 'bg-primary text-white' : 'bg-light'}\">\n                <div class=\"small fw-bold\">${me ? 'Tu' : m.sender}</div>\n                ${bodyHtml}\n                <div class=\"small text-muted\">${m.created_at}</div>\n              </div>`;
             box.appendChild(wrap);
           }
           if (m.id > window.CHAT.lastId) {
@@ -118,6 +197,13 @@ function fetchNew(){
           }
         });
         if(d.messages.length){ scrollBottom(); }
+        // Bind preview events
+        document.querySelectorAll('#messages .chat-attachment').forEach(a=>{
+          a.addEventListener('click', function(ev){
+            ev.preventDefault();
+            openPreview(this.dataset.url, this.dataset.name, this.dataset.image === '1');
+          });
+        });
       }
     })
     .finally(()=>{ window.CHAT.fetching = false; });
@@ -129,6 +215,88 @@ function setLoading(flag){
   if(!ov) return;
   ov.classList.toggle('d-none', !flag);
 }
+
+// Emoji picker simplu (fallback minimal)
+document.getElementById('emojiBtn').addEventListener('click', function(){
+  const input = document.getElementById('content');
+  if (window._emojiPicker && (window._emojiPicker.showPicker || window._emojiPicker.togglePicker)){
+    const btn = this;
+    if (btn.dataset.pickerOpen === '1') {
+      try { window._emojiPicker.hidePicker(); } catch(e) {}
+      btn.dataset.pickerOpen = '0';
+    } else {
+      try { window._emojiPicker.showPicker(btn); btn.dataset.pickerOpen = '1'; }
+      catch(e){ window._emojiPicker.togglePicker(btn); }
+    }
+    return;
+  }
+  // Fallback mini grid
+  const emojis = ['😀','😁','😂','😊','😍','👍','🙏','🎉','💪','🤝','🙌','😎','🤩','😇','😢','😡','🔥','✨','💯'];
+  const menu = document.createElement('div');
+  menu.className = 'position-absolute bg-white border rounded p-2 shadow';
+  menu.style.zIndex = 2000;
+  const rect = this.getBoundingClientRect();
+  menu.style.left = rect.left + 'px';
+  menu.style.bottom = (window.innerHeight - rect.top + 8) + 'px';
+  emojis.forEach(e=>{
+    const b=document.createElement('button');b.type='button';b.className='btn btn-sm';b.textContent=e; b.addEventListener('click',()=>{input.value += (input.value?' ':'')+e; document.body.removeChild(menu); input.focus();}); menu.appendChild(b);
+  });
+  document.body.appendChild(menu);
+  window._emojiFallbackMenu = menu;
+});
+
+// Fancy emoji picker (emoji-button) via CDN
+(function(){
+  const s=document.createElement('script');
+  s.src='https://cdn.jsdelivr.net/npm/emoji-button@4.6.4/dist/index.min.js';
+  s.onload=function(){
+    try{
+      const picker = new EmojiButton({ position: 'top-start', theme: 'light' });
+      window._emojiPicker = picker;
+      try {
+        const btn = document.getElementById('emojiBtn');
+        picker.on('show', ()=>{ if (btn) btn.dataset.pickerOpen = '1'; });
+        picker.on('hidden', ()=>{ if (btn) btn.dataset.pickerOpen = '0'; });
+      } catch(e) {}
+      picker.on('emoji', selection =>{
+        const input = document.getElementById('content');
+        input.value += (input.value? ' ' : '') + selection.emoji;
+        input.focus();
+        // Închide imediat; uneori necesită un mic delay
+        try { picker.hidePicker(); } catch(e) {}
+        setTimeout(()=>{ try { picker.hidePicker(); } catch(e) {} }, 20);
+        setTimeout(closeEmojiPickers, 25);
+      });
+// Asigură închidere și la submit nativ
+document.getElementById('sendForm').addEventListener('submit', closeEmojiPickers);
+    }catch(e){}
+  };
+  document.head.appendChild(s);
+})();
+
+// Preview overlay handlers
+function openPreview(url, name, isImage){
+  const ov=document.getElementById('filePreview');
+  const body=document.getElementById('filePreviewBody');
+  body.innerHTML='';
+  if(isImage){
+    const img=new Image(); img.src=url; img.alt=name; img.className='img-fluid'; body.appendChild(img);
+  }else{
+    const a=document.createElement('a'); a.href=url; a.target='_blank'; a.className='btn btn-primary'; a.textContent='Descarcă '+(name||'fișier'); body.appendChild(a);
+  }
+  ov.classList.remove('d-none');
+}
+document.querySelector('#filePreview .file-preview-backdrop').addEventListener('click', ()=> document.getElementById('filePreview').classList.add('d-none'));
+document.querySelector('#filePreview .file-preview-close').addEventListener('click', ()=> document.getElementById('filePreview').classList.add('d-none'));
+
+// Leagă preview-ul și pentru mesajele randate inițial
+function bindAttachmentPreview(){
+  document.querySelectorAll('#messages .chat-attachment').forEach(a=>{
+    if (a.dataset._bound) return; a.dataset._bound='1';
+    a.addEventListener('click', function(ev){ ev.preventDefault(); openPreview(this.dataset.url, this.dataset.name, this.dataset.image === '1'); });
+  });
+}
+bindAttachmentPreview();
 </script>
 {% endblock %}
 {% endblock %}
