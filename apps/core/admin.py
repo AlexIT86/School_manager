@@ -2,7 +2,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
-from .models import StudentProfile, Notification
+from .models import StudentProfile, Notification, Achievement, UserAchievement
 
 
 class StudentProfileInline(admin.StackedInline):
@@ -29,3 +29,17 @@ class NotificationAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('user')
+
+
+@admin.register(Achievement)
+class AchievementAdmin(admin.ModelAdmin):
+    list_display = ['code', 'name', 'category', 'points', 'is_active']
+    list_filter = ['category', 'is_active']
+    search_fields = ['code', 'name', 'description']
+
+
+@admin.register(UserAchievement)
+class UserAchievementAdmin(admin.ModelAdmin):
+    list_display = ['user', 'achievement', 'unlocked_at', 'progress']
+    list_filter = ['unlocked_at', 'achievement__category']
+    search_fields = ['user__username', 'achievement__code', 'achievement__name']

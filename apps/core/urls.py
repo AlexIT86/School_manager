@@ -26,6 +26,8 @@ urlpatterns = [
     # Statistici și overview
     path('stats/', views.quick_stats_view, name='quick_stats'),
     path('calendar/', views.calendar_overview, name='calendar_overview'),
+    # Achievements
+    path('achievements/', views.achievements_view, name='achievements'),
 
     # Role management (superadmin only UI) - evitate coliziuni cu Django Admin
     path('superadmin/roles/', views.roles_overview_view, name='roles_overview'),

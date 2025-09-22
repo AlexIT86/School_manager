@@ -95,6 +95,47 @@ class Notification(models.Model):
         return f"{self.get_tip_display()}: {self.titlu}"
 
 
+class Achievement(models.Model):
+    """Catalog de achivement-uri (definire globală)."""
+    code = models.CharField(max_length=50, unique=True)
+    name = models.CharField(max_length=100)
+    description = models.TextField()
+    category = models.CharField(max_length=50, default='general')
+    icon = models.CharField(max_length=50, default='fas fa-trophy')
+    points = models.PositiveIntegerField(default=10)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Achievement"
+        verbose_name_plural = "Achievements"
+
+    def __str__(self):
+        return f"[{self.code}] {self.name}"
+
+
+class UserAchievement(models.Model):
+    """Achivment-uri obținute de utilizator.
+    progress poate fi folosit pentru achivment-uri incremental (ex: 5/10 teme la timp).
+    meta poate conține JSON (salvat ca text) cu detalii.
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_achievements')
+    achievement = models.ForeignKey(Achievement, on_delete=models.CASCADE, related_name='earned_by')
+    unlocked_at = models.DateTimeField(blank=True, null=True)
+    progress = models.IntegerField(default=0)
+    meta = models.TextField(blank=True)
+
+    class Meta:
+        verbose_name = "User Achievement"
+        verbose_name_plural = "User Achievements"
+        unique_together = ('user', 'achievement')
+
+    def __str__(self):
+        status = 'Unlocked' if self.unlocked_at else f"Progress {self.progress}"
+        return f"{self.user.username} - {self.achievement.code} ({status})"
+
+
 # Signals pentru crearea automată a profilului
 @receiver(post_save, sender=User)
 def create_student_profile(sender, instance, created, **kwargs):

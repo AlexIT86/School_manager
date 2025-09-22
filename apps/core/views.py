@@ -7,7 +7,7 @@ from django.db.models import Count, Avg, Q
 from django.utils import timezone
 from datetime import date, timedelta
 
-from .models import StudentProfile, Notification
+from .models import StudentProfile, Notification, Achievement, UserAchievement
 from .forms import StudentProfileForm, UserRegistrationForm
 from apps.subjects.models import Subject
 from apps.homework.models import Homework
@@ -345,6 +345,13 @@ def dashboard_view(request):
             next_vacation = {'name': vname, 'start': vstart}
             break
 
+    # Achievements recente (ultimele 3 deblocate)
+    recent_achievements = []
+    try:
+        recent_achievements = list(UserAchievement.objects.filter(user=user, unlocked_at__isnull=False).select_related('achievement').order_by('-unlocked_at')[:3])
+    except Exception:
+        recent_achievements = []
+
     context = {
         'profile': profile,
         'stats': stats,
@@ -358,6 +365,7 @@ def dashboard_view(request):
         'weekday_name': ['Luni', 'Marți', 'Miercuri', 'Joi', 'Vineri', 'Sâmbătă', 'Duminică'][weekday - 1],
         'module_progress': module_progress,
         'next_vacation': next_vacation,
+        'recent_achievements': recent_achievements,
     }
 
     return render(request, 'core/dashboard.html', context)
@@ -591,6 +599,36 @@ def roles_overview_view(request):
         'assigned_perm_ids': assigned_perm_ids,
     }
     return render(request, 'core/roles_overview.html', context)
+
+
+@login_required
+def achievements_view(request):
+    """Pagină cu achivement-urile disponibile și progresul utilizatorului."""
+    all_ach = Achievement.objects.filter(is_active=True).order_by('category', 'name')
+    user_ach_map = {ua.achievement_id: ua for ua in UserAchievement.objects.filter(user=request.user)}
+
+    achievements = []
+    for a in all_ach:
+        ua = user_ach_map.get(a.id)
+        achievements.append({
+            'achievement': a,
+            'unlocked': bool(ua and ua.unlocked_at),
+            'progress': ua.progress if ua else 0,
+            'unlocked_at': ua.unlocked_at if ua else None,
+        })
+
+    # Statistici
+    total = len(achievements)
+    unlocked = sum(1 for x in achievements if x['unlocked'])
+    context = {
+        'achievements': achievements,
+        'stats': {
+            'total': total,
+            'unlocked': unlocked,
+            'percent': int(round((unlocked * 100.0 / max(total, 1)))) if total else 0,
+        }
+    }
+    return render(request, 'core/achievements.html', context)
 
 
 @login_required

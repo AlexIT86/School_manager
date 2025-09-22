@@ -338,6 +338,30 @@
 
         <!-- Right Column -->
         <div class="col-lg-4">
+            {% if recent_achievements %}
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-trophy me-2 text-warning"></i>
+                        Realizări recente
+                    </h6>
+                    <a href="{% url 'core:achievements' %}" class="btn btn-sm btn-outline-warning">Toate</a>
+                </div>
+                <div class="card-body">
+                    {% for ua in recent_achievements %}
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="me-3">
+                            <span class="badge bg-warning text-dark p-2 rounded-circle"><i class="{{ ua.achievement.icon }}"></i></span>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-bold small">{{ ua.achievement.name }}</div>
+                            <div class="text-muted small">{{ ua.unlocked_at|date:"d.m.Y H:i" }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
             
             <!-- Quick Actions -->
             <div class="card mb-4">
