@@ -20,6 +20,7 @@ urlpatterns = [
     path('orar/', include('apps.schedule.urls')),
     path('teme/', include('apps.homework.urls')),
     path('note/', include('apps.grades.urls')),
+    path('chat/', include('apps.chat.urls')),
     # 403 custom fallback (optional explicit path to preview)
     path('403/', permission_denied, {'exception': Exception('Forbidden')}, name='forbidden'),
 ]

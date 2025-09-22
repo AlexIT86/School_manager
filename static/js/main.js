@@ -376,6 +376,9 @@
 
         // Notification system
         initializeNotifications: function() {
+            if (window.DISABLE_TOASTS || document.body.dataset.noToasts === '1') {
+                return; // Skip notifications on pages that opt-out (e.g., Chat)
+            }
             this.checkForNewNotifications();
             setInterval(() => this.checkForNewNotifications(), 60000); // Check every minute
         },
@@ -416,6 +419,9 @@
 
         // Toast notifications
         showToast: function(title, message, type = 'info') {
+            if (window.DISABLE_TOASTS || document.body.dataset.noToasts === '1') {
+                return;
+            }
             const toastContainer = this.getToastContainer();
             const toastId = 'toast-' + Date.now();
             
@@ -447,6 +453,9 @@
         },
 
         getToastContainer: function() {
+            if (window.DISABLE_TOASTS || document.body.dataset.noToasts === '1') {
+                return null;
+            }
             let container = document.querySelector('.toast-container');
             if (!container) {
                 container = document.createElement('div');
@@ -605,6 +614,10 @@
             document.addEventListener('submit', function(e) {
                 const form = e.target;
                 if (form.tagName === 'FORM') {
+                    // Skip global loading for forms that opt-out
+                    if (form.hasAttribute('data-no-global-loading')) {
+                        return;
+                    }
                     const submitBtn = form.querySelector('button[type="submit"]');
                     if (submitBtn) {
                         SchoolManager.setButtonLoading(submitBtn, true);
@@ -695,8 +708,12 @@
 
     // Initialize when DOM is loaded
     document.addEventListener('DOMContentLoaded', function() {
+        // Skip init notifications if on chat pages
+        if (location.pathname.startsWith('/chat/')) {
+            document.body.dataset.noToasts = '1';
+            window.DISABLE_TOASTS = true;
+        }
         SchoolManager.init();
-        
         // Hide loading overlay if present
         setTimeout(() => SchoolManager.hideLoadingOverlay(), 500);
     });

@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'apps.schedule',
     'apps.homework',
     'apps.grades',
+    'apps.chat',
 ]
 
 MIDDLEWARE = [

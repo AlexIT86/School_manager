@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+{% block title %}Chat - Conversație{% endblock %}
+{% block content %}
+<script>window.DISABLE_TOASTS = true; document.addEventListener('DOMContentLoaded',()=>{ document.body.dataset.noToasts='1';});</script>
+<div class="container py-4">
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <div>
+        <i class="fas fa-comments me-2 text-primary"></i>
+        {% if conversation.title %}{{ conversation.title }}{% else %}
+          {% for p in conversation.participants.all %}{% if p != request.user %}{{ p.username }}{% if not forloop.last %}, {% endif %}{% endif %}{% endfor %}
+        {% endif %}
+      </div>
+      <a href="{% url 'chat:inbox' %}" class="btn btn-sm btn-outline-secondary">Înapoi</a>
+    </div>
+    <div class="card-body position-relative" style="height: 55vh; overflow-y: auto" id="messagesPane">
+      <div id="loadingOverlay" class="position-absolute top-0 start-0 w-100 h-100 d-none" style="background: rgba(255,255,255,0.6);">
+        <div class="d-flex justify-content-center align-items-center h-100">
+          <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
+        </div>
+      </div>
+      <div id="messages">
+        {% for m in messages %}
+          <div class="mb-2 {% if m.sender == request.user %}text-end{% endif %}">
+            <div class="d-inline-block px-3 py-2 rounded-3 {% if m.sender == request.user %}bg-primary text-white{% else %}bg-light{% endif %}">
+              <div class="small fw-bold">{% if m.sender != request.user %}{{ m.sender.username }}{% else %}Tu{% endif %}</div>
+              <div class="small">{{ m.content|linebreaksbr }}</div>
+              <div class="small text-muted">{{ m.created_at|date:"d.m.Y H:i" }}</div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="card-footer">
+      <form id="sendForm" class="d-flex gap-2" data-no-global-loading onsubmit="event.stopPropagation(); return sendMessage()">
+        <input type="text" id="content" class="form-control" placeholder="Scrie un mesaj...">
+        <button class="btn btn-primary" type="submit"><i class="fas fa-paper-plane"></i></button>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% block extra_js %}
+<script>
+window.CHAT = window.CHAT || {};
+window.CHAT.convoId = {{ conversation.id }};
+window.CHAT.lastId = {{ last_id|default:0 }};
+window.CHAT.fetching = false;
+
+function scrollBottom(){
+  const pane = document.getElementById('messagesPane');
+  pane.scrollTop = pane.scrollHeight;
+}
+scrollBottom();
+
+function sendMessage(){
+  const input = document.getElementById('content');
+  const text = input.value.trim();
+  if(!text) return false;
+  setLoading(true);
+  const submitBtn = document.querySelector('#sendForm button[type="submit"]');
+  // Protejează împotriva loading-ului global: setează manual textul și îl restaurăm noi
+  if (submitBtn && !submitBtn.dataset.originalText) {
+    submitBtn.dataset.originalText = submitBtn.innerHTML;
+  }
+  fetch(`/chat/${window.CHAT.convoId}/send/`, {
+    method:'POST',
+    headers:{'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value},
+    body: new URLSearchParams({content:text})
+  }).then(r=>r.json()).then(d=>{
+    if(d.success){
+      input.value = '';
+      fetchNew().finally(()=> {
+        setLoading(false);
+        if (submitBtn && submitBtn.dataset.originalText) {
+          submitBtn.innerHTML = submitBtn.dataset.originalText;
+          submitBtn.disabled = false;
+        }
+        input.focus();
+      });
+    } else {
+      setLoading(false);
+      if (submitBtn && submitBtn.dataset.originalText) {
+        submitBtn.innerHTML = submitBtn.dataset.originalText;
+        submitBtn.disabled = false;
+      }
+    }
+  }).catch(()=>{
+    setLoading(false);
+    if (submitBtn && submitBtn.dataset.originalText) {
+      submitBtn.innerHTML = submitBtn.dataset.originalText;
+      submitBtn.disabled = false;
+    }
+  });
+  return false;
+}
+
+function fetchNew(){
+  if (window.CHAT.fetching) { return Promise.resolve(); }
+  window.CHAT.fetching = true;
+  return fetch(`/chat/${window.CHAT.convoId}/fetch/?after_id=${window.CHAT.lastId}`)
+    .then(r=>r.json())
+    .then(d=>{
+      if(d.success){
+        const box = document.getElementById('messages');
+        d.messages.forEach(m => {
+          if (!document.getElementById(`msg-${m.id}`)) {
+            const me = m.sender === '{{ request.user.username }}';
+            const wrap = document.createElement('div');
+            wrap.id = `msg-${m.id}`;
+            wrap.className = `mb-2 ${me ? 'text-end' : ''}`;
+            wrap.innerHTML = `
+              <div class=\"d-inline-block px-3 py-2 rounded-3 ${me ? 'bg-primary text-white' : 'bg-light'}\">\n                <div class=\"small fw-bold\">${me ? 'Tu' : m.sender}</div>\n                <div class=\"small\">${m.content.replaceAll('\\n','<br>')}</div>\n                <div class=\"small text-muted\">${m.created_at}</div>\n              </div>`;
+            box.appendChild(wrap);
+          }
+          if (m.id > window.CHAT.lastId) {
+            window.CHAT.lastId = m.id;
+          }
+        });
+        if(d.messages.length){ scrollBottom(); }
+      }
+    })
+    .finally(()=>{ window.CHAT.fetching = false; });
+}
+setInterval(fetchNew, 3000);
+
+function setLoading(flag){
+  const ov = document.getElementById('loadingOverlay');
+  if(!ov) return;
+  ov.classList.toggle('d-none', !flag);
+}
+</script>
+{% endblock %}
+{% endblock %}
+
+

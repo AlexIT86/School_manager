@@ -19,6 +19,7 @@ from django.contrib.auth.models import Group, Permission, User
 from django.core.exceptions import PermissionDenied
 from django.urls import reverse
 from django.contrib.sessions.models import Session
+from apps.chat.models import Message
 
 try:
     from .email_utils import send_email
@@ -352,6 +353,12 @@ def dashboard_view(request):
     except Exception:
         recent_achievements = []
 
+    # Mesaje necitite
+    try:
+        unread_messages_count = Message.objects.filter(conversation__participants=user).exclude(read_by=user).exclude(sender=user).count()
+    except Exception:
+        unread_messages_count = 0
+
     context = {
         'profile': profile,
         'stats': stats,
@@ -366,6 +373,7 @@ def dashboard_view(request):
         'module_progress': module_progress,
         'next_vacation': next_vacation,
         'recent_achievements': recent_achievements,
+        'unread_messages_count': unread_messages_count,
     }
 
     return render(request, 'core/dashboard.html', context)
