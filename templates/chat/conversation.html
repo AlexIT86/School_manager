@@ -97,6 +97,12 @@ function closeEmojiPickers(){
     }
   } catch(e) {}
   try {
+    if (window._emojiMenu && window._emojiMenu.parentNode) {
+      window._emojiMenu.parentNode.removeChild(window._emojiMenu);
+      window._emojiMenu = null;
+    }
+  } catch(e) {}
+  try {
     document.querySelectorAll('.emoji-picker, .emoji-picker__wrapper, .emoji-picker__container, .EmojiPicker').forEach(el=>{
       el.parentNode && el.parentNode.removeChild(el);
     });
@@ -217,33 +223,58 @@ function setLoading(flag){
 }
 
 // Emoji picker simplu (fallback minimal)
-document.getElementById('emojiBtn').addEventListener('click', function(){
-  const input = document.getElementById('content');
-  if (window._emojiPicker && (window._emojiPicker.showPicker || window._emojiPicker.togglePicker)){
-    const btn = this;
-    if (btn.dataset.pickerOpen === '1') {
-      try { window._emojiPicker.hidePicker(); } catch(e) {}
-      btn.dataset.pickerOpen = '0';
-    } else {
-      try { window._emojiPicker.showPicker(btn); btn.dataset.pickerOpen = '1'; }
-      catch(e){ window._emojiPicker.togglePicker(btn); }
+// REPLACED: deterministic custom grid that closes on first selection
+(function(){
+  const old = document.getElementById('emojiBtn');
+  if (!old) return;
+  old.addEventListener('click', function(){
+    const input = document.getElementById('content');
+    if (window._emojiMenu && window._emojiMenu.parentNode) {
+      window._emojiMenu.parentNode.removeChild(window._emojiMenu);
+      window._emojiMenu = null;
+      return;
     }
-    return;
-  }
-  // Fallback mini grid
-  const emojis = ['😀','😁','😂','😊','😍','👍','🙏','🎉','💪','🤝','🙌','😎','🤩','😇','😢','😡','🔥','✨','💯'];
-  const menu = document.createElement('div');
-  menu.className = 'position-absolute bg-white border rounded p-2 shadow';
-  menu.style.zIndex = 2000;
-  const rect = this.getBoundingClientRect();
-  menu.style.left = rect.left + 'px';
-  menu.style.bottom = (window.innerHeight - rect.top + 8) + 'px';
-  emojis.forEach(e=>{
-    const b=document.createElement('button');b.type='button';b.className='btn btn-sm';b.textContent=e; b.addEventListener('click',()=>{input.value += (input.value?' ':'')+e; document.body.removeChild(menu); input.focus();}); menu.appendChild(b);
+    const emojis = ['😀','😁','😂','🤣','😊','😍','😘','😎','🤩','😇','🙃','🙂','🥳','🤗','😴','😢','😭','😡','🤬','🤯','🤔','🙄','😱','🤤','🤝','👍','👎','🙏','👏','🙌','💪','🔥','✨','💯','🎉','🎊','🥇','🏆','📚','📝','🧠','💡','📎','📷','🖼️','🎵','🎧','🎥','📁','📄'];
+    const menu = document.createElement('div');
+    menu.className = 'position-absolute bg-white border rounded p-2 shadow';
+    menu.style.zIndex = 3000;
+    menu.style.width = '260px';
+    menu.style.maxHeight = '220px';
+    menu.style.overflowY = 'auto';
+    menu.style.display = 'grid';
+    menu.style.gridTemplateColumns = 'repeat(8, 1fr)';
+    menu.style.gap = '6px';
+    const rect = this.getBoundingClientRect();
+    menu.style.left = rect.left + 'px';
+    menu.style.bottom = (window.innerHeight - rect.top + 8) + 'px';
+    emojis.forEach(e=>{
+      const b=document.createElement('button');
+      b.type='button';
+      b.className='btn btn-light p-1';
+      b.style.lineHeight='1';
+      b.textContent=e;
+      b.addEventListener('click',()=>{
+        input.value += (input.value?' ':'')+e;
+        if (window._emojiMenu && window._emojiMenu.parentNode) { window._emojiMenu.parentNode.removeChild(window._emojiMenu); window._emojiMenu = null; }
+        input.focus();
+      });
+      menu.appendChild(b);
+    });
+    document.body.appendChild(menu);
+    window._emojiMenu = menu;
+    const closeOnOutside = (ev)=>{
+      if (!menu.contains(ev.target) && ev.target !== this) {
+        if (window._emojiMenu && window._emojiMenu.parentNode) { window._emojiMenu.parentNode.removeChild(window._emojiMenu); window._emojiMenu = null; }
+        document.removeEventListener('mousedown', closeOnOutside, true);
+        document.removeEventListener('scroll', closeOnOutside, true);
+        window.removeEventListener('resize', closeOnOutside, true);
+      }
+    };
+    document.addEventListener('mousedown', closeOnOutside, true);
+    document.addEventListener('scroll', closeOnOutside, true);
+    window.addEventListener('resize', closeOnOutside, true);
   });
-  document.body.appendChild(menu);
-  window._emojiFallbackMenu = menu;
-});
+})();
 
 // Fancy emoji picker (emoji-button) via CDN
 (function(){
@@ -253,6 +284,7 @@ document.getElementById('emojiBtn').addEventListener('click', function(){
     try{
       const picker = new EmojiButton({ position: 'top-start', theme: 'light' });
       window._emojiPicker = picker;
+      // Sync button state
       try {
         const btn = document.getElementById('emojiBtn');
         picker.on('show', ()=>{ if (btn) btn.dataset.pickerOpen = '1'; });
@@ -262,10 +294,9 @@ document.getElementById('emojiBtn').addEventListener('click', function(){
         const input = document.getElementById('content');
         input.value += (input.value? ' ' : '') + selection.emoji;
         input.focus();
-        // Închide imediat; uneori necesită un mic delay
         try { picker.hidePicker(); } catch(e) {}
-        setTimeout(()=>{ try { picker.hidePicker(); } catch(e) {} }, 20);
-        setTimeout(closeEmojiPickers, 25);
+        setTimeout(()=>{ try { picker.hidePicker(); } catch(e) {} }, 0);
+        setTimeout(closeEmojiPickers, 10);
       });
 // Asigură închidere și la submit nativ
 document.getElementById('sendForm').addEventListener('submit', closeEmojiPickers);
